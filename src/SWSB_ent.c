@@ -1,126 +1,200 @@
 #include "../include/SWSB_ent.h"
 
-Entity InitEntityTexture(int x, int y, int w, int h,
-                    int vel, SDL_Renderer *renderer,
-                    const char *image_path)
+static void FreeEntity(Entity *ent)
 {
-    Entity ent;
+    SDL_DestroyTexture(ent->texture);
+    free(ent);
+}
 
-    ent.box.x = x;
-    ent.box.y = y;
-    ent.box.w = w;
-    ent.box.h = h;
-    ent.vel = vel;
+static void RemoveEnt(Entities *ents, int index)
+{
+    FreeEntity(ents->elems[index]);
 
-    ent.texture = GetImageTexture(renderer, image_path);
+    for (int i = index; i < (ents->size - 1); i++)
+    {
+        ents->elems[i] = ents->elems[i + 1];
+    }
+
+    ents->size--;
+}
+
+static bool IsBoltOutOfBounds(Entity *bolt)
+{
+    if ((bolt->box.y + bolt->box.h) >= 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static bool IsAsterOutOfBounds(Entity *aster)
+{
+    if (aster->box.y <= SCREEN_HEIGHT)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer)
+{
+    SDL_RenderCopy(renderer, ship->texture, NULL, &ship->box);
+}
+
+static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer)
+{
+    bolt->box.y -= bolt->vel;
+    SDL_SetRenderDrawColor(renderer, bolt->color.r, bolt->color.g, bolt->color.b, bolt->color.a);
+    SDL_RenderFillRect(renderer, &bolt->box);
+}
+
+static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer)
+{
+    aster->box.y += aster->vel;
+    SDL_RenderCopy(renderer, aster->texture, NULL, &aster->box);
+}
+
+Entity *InitTextureEntity(int x, int y, int w, int h,
+                            SDL_Renderer *renderer, const char *image_path)
+{
+    Entity *ent = malloc(sizeof(Entity));
+
+    ent->box.x = x;
+    ent->box.y = y;
+    ent->box.w = w;
+    ent->box.h = h;
+
+    ent->vel = 0;
+    ent->firetime = 0;
+
+    ent->color.r = 0;
+    ent->color.g = 0;
+    ent->color.b = 0;
+    ent->color.a = 0;
+
+    ent->texture = GetImageTexture(renderer, image_path);
+
+    ent->IsEntOutOfBounds = NULL;
+    ent->RenderEntity = NULL;
 
     return ent;
 }
 
-void RenderEntityTexture(Entity *ent, SDL_Renderer *renderer)
+Entity *InitPlayerEntity(int x, int y, int w, int h,
+                        int vel, Uint32 firetime, SDL_Renderer *renderer,
+                        const char *image_path)
 {
-    SDL_RenderCopy(renderer, ent->texture, NULL, &ent->box);
+    Entity *ent = InitTextureEntity(x, y, w, h, renderer, image_path);
+    ent->vel = vel;
+    ent->firetime = firetime;
+
+    ent->RenderEntity = RenderEntityPlayer;
+
+    return ent;
 }
 
-void FreeEntityTexture(Entity *ent)
+Entity *InitBoltEntity(int w, int h, int vel, 
+                        Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
-    SDL_DestroyTexture(ent->texture);
+    Entity *ent = malloc(sizeof(Entity));
+
+    ent->box.x = 0;
+    ent->box.y = 0;
+    ent->box.w = w;
+    ent->box.h = h;
+
+    ent->vel = vel;
+    ent->firetime = 0;
+
+    ent->color.r = r;
+    ent->color.g = g;
+    ent->color.b = b;
+    ent->color.a = a;
+
+    ent->texture = NULL;
+
+    ent->IsEntOutOfBounds = IsBoltOutOfBounds;
+    ent->RenderEntity = RenderEntityBolt;
+
+    return ent;
 }
 
-/* Bolt Stuff */
-static void RemoveBolt(Bolts *bq)
+Entity *InitAsteroidEntity(int x, int y, int w, int h,
+                            int vel, SDL_Renderer *renderer,
+                            const char *image_path)
 {
-    for (int i = 0; i < (bq->size - 1); i++)
+    Entity *aster = InitTextureEntity(x, y, w, h, renderer, image_path);
+
+    aster->vel = vel;
+    aster->firetime = 0;
+
+    aster->IsEntOutOfBounds = IsAsterOutOfBounds;
+    aster->RenderEntity = RenderEntityAster;
+
+    return aster;
+}
+
+void AppenedEntityPlayer(Entities *ents, Entity *player)
+{
+    ents->elems[ents->size] = player;
+    ents->size++;
+}
+
+void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box)
+{
+    ents->elems[ents->size] = bolt;
+    ents->elems[ents->size]->box.x = player_box->x + (player_box->w / 2);
+    ents->elems[ents->size]->box.y = player_box->y - ents->elems[ents->size]->box.h;
+    ents->size++;
+}
+
+void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
+{
+    int x = rand() % (SCREEN_WIDTH - ASTER_SIZE);
+    ents->elems[ents->size] = InitAsteroidEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE,
+                                                    4, renderer, ASTER_GRAY_IMG);
+    ents->size++;
+}
+
+bool IsEntitiesFull(Entities *ents)
+{
+    if (ents->size == ents->capacity)
     {
-        bq->shots[i] = bq->shots[i + 1];
-    }
-
-    bq->size--;
-}
-
-static bool IsBoltRendered(SDL_Renderer *renderer, Entity *bolt)
-{
-    if (bolt->box.y > 0)
-    {
-        bolt->box.y -= bolt->vel;
-        SDL_SetRenderDrawColor(renderer, bolt->color.r, bolt->color.g, bolt->color.b, bolt->color.a);
-        SDL_RenderFillRect(renderer, &bolt->box);
-
         return true;
     }
 
     return false;
 }
 
-Entity InitEntityBolt(int w, int h, int vel, Uint32 firetime,
-                Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+void RenderEntities(Entities *ents, SDL_Renderer *renderer)
 {
-    Entity bolt;
+    int i = 1;
+    Entity *curr_ent = ents->elems[0];
 
-    bolt.box.x = 0;
-    bolt.box.y = 0;
-    bolt.box.w = w;
-    bolt.box.h = h;
+    // The first index is the player.
+    curr_ent->RenderEntity(ents->elems[0], renderer);
 
-    bolt.vel = vel;
-    bolt.firetime = firetime;
-
-    bolt.color.r = r;
-    bolt.color.g = g;
-    bolt.color.b = b;
-    bolt.color.a = a;
-
-    bolt.texture = NULL;
-
-    return bolt;
-}
-
-Bolts InitBolts(int capacity)
-{
-    Bolts bolts;
-    bolts.capacity = capacity;
-    bolts.size = 0;
-    bolts.next_shot = 0;
-    bolts.shots = malloc(sizeof(Entity) * (size_t)capacity);
-
-    return bolts;
-}
-
-void AppendBolts(Bolts *bolts, Entity *shot, SDL_Rect *ent_box)
-{
-    bolts->shots[bolts->size] = *shot;
-    bolts->shots[bolts->size].box.x = ent_box->x + (ent_box->w / 2);
-    bolts->shots[bolts->size].box.y = ent_box->y - bolts->shots[bolts->size].box.h;
-    bolts->size++;
-}
-
-bool IsBoltsFull(Bolts *bolts)
-{
-    if (bolts->size == bolts->capacity)
+    while (i < ents->size)
     {
-        return true;
-    }
+        curr_ent = ents->elems[i];
 
-    return false;
-}
-
-void RenderBolts(Bolts *bolts, SDL_Renderer *renderer)
-{
-    int i = 0;
-
-    while (i < bolts->size)
-    {
-        if (!(IsBoltRendered(renderer, &bolts->shots[i])))
+        if (curr_ent->IsEntOutOfBounds(curr_ent))
         {
-            RemoveBolt(bolts);
+            RemoveEnt(ents, i);
             continue;
         }
 
+        curr_ent->RenderEntity(curr_ent, renderer);
         i++;
     }
 }
 
-void FreeBolts(Bolts *bolts)
+void FreeEntities(Entities *ents)
 {
-    free(bolts->shots);
+    for (int i = 0; i < ents->size; i++)
+    {
+       FreeEntity(ents->elems[i]);
+    }
 }

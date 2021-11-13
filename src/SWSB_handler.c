@@ -1,6 +1,6 @@
 #include "../include/SWSB_handler.h"
 
-Handler SDL_InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
+Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
 {
     SDL_Init(SDL_INIT_VIDEO);
 

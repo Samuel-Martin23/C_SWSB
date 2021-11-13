@@ -15,7 +15,7 @@ typedef struct
     const Uint8 *keyboard;
 } Handler;
 
-Handler SDL_InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags);
+Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags);
 void SetFrameRate(Handler *handler);
 void FreeHandler(Handler *handler);
 

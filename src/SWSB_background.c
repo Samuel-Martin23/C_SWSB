@@ -17,15 +17,15 @@ Background InitBackground(SDL_Renderer *renderer, int width, int height)
     background.next.w = background.width;
     background.next.h = background.height;
 
-    background.texture = GetImageTexture(renderer, BACKGROUND_TEXT);
+    background.texture = GetImageTexture(renderer, BACKGROUND_IMG);
 
     return background;
 }
 
 void RenderBackground(Background *background, SDL_Renderer *renderer)
 {
-    background->curr.y++;
-    background->next.y++;
+    background->curr.y += 2;
+    background->next.y += 2;
 
     if (background->curr.y >= background->height)
     {
