@@ -1,109 +1,48 @@
 #include "../include/SWSB_ent.h"
 
-static void RemoveEnt(Entities *ents, int index)
-{
-    SDL_DestroyTexture(ents->elems[index]->texture);
-    free(ents->elems[index]);
+/*
+==============
+Player Entity
+==============
+*/
+static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer);
 
-    for (int i = index; i < (ents->size - 1); i++)
-    {
-        ents->elems[i] = ents->elems[i + 1];
-    }
 
-    ents->size--;
-}
+/*
+==============
+Bolt Entity
+==============
+*/
+static bool IsBoltOutOfBounds(Entity *bolt);
+static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer);
 
-static bool IsBoltOutOfBounds(Entity *bolt)
-{
-    if ((bolt->box.y + bolt->box.h) >= 0)
-    {
-        return false;
-    }
 
-    return true;
-}
+/*
+==============
+Asteroid Entity
+==============
+*/
+static bool IsAsterOutOfBounds(Entity *aster);
+static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer);
 
-static bool IsAsterOutOfBounds(Entity *aster)
-{
-    if (aster->box.y <= SCREEN_HEIGHT)
-    {
-        return false;
-    }
 
-    return true;
-}
+/*
+==============
+Power Up Entity
+==============
+*/
+static bool IsPowerUpOutOfBounds(Entity *power_up);
+static void SetRGBPowerUp(Entity *power_up);
+static void RenderEntityPowerUp(Entity *power_up, SDL_Renderer *renderer);
 
-static bool IsPowerUpOutOfBounds(Entity *power_up)
-{
-    if (power_up->box.y <= SCREEN_HEIGHT)
-    {
-        return false;
-    }
 
-    return true;
-}
+/*
+==============
+Entities
+==============
+*/
+static bool IsEntitiesFull(Entities *ents);
 
-static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer)
-{
-    SDL_RenderCopy(renderer, ship->texture, NULL, &ship->box);
-}
-
-static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer)
-{
-    bolt->box.y -= bolt->vel;
-    SDL_SetRenderDrawColor(renderer, bolt->color.r, bolt->color.g, bolt->color.b, bolt->color.a);
-    SDL_RenderFillRect(renderer, &bolt->box);
-}
-
-static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer)
-{
-    aster->box.y += aster->vel;
-    SDL_RenderCopy(renderer, aster->texture, NULL, &aster->box);
-}
-
-static void SetRGBPowerUp(Entity *power_up)
-{
-    power_up->color.r = (Uint8)(rand() % 256);
-    power_up->color.g = (Uint8)(rand() % 256);
-    power_up->color.b = (Uint8)(rand() % 256);
-}
-
-static void RenderEntityPowerUp(Entity *power_up, SDL_Renderer *renderer)
-{
-    power_up->box.y += power_up->vel;
-
-    if ((power_up->box.y % 20) == 0)
-    {
-        SetRGBPowerUp(power_up);
-    }
-
-    SDL_SetRenderDrawColor(renderer, power_up->color.r, power_up->color.g, power_up->color.b, power_up->color.a);
-    SDL_RenderFillRect(renderer, &power_up->box);
-}
-
-static void DoDamages(Entities *ents, int sender, int receiver)
-{
-    Entity *ent_sender = ents->elems[sender];
-    Entity *ent_receiver = ents->elems[receiver];
-
-    if ((ent_sender->health - ent_receiver->damage) <= 0)
-    {
-        // Don't remove the player.
-        if (sender == 0)
-        {
-            printf("You lost.\n");
-            exit(1);
-        }
-
-        RemoveEnt(ents, sender);
-    }
-    else
-    {
-        ent_sender->health -= ent_receiver->damage;
-    }
-
-    printf("CALLED\n");
-}
 
 static Entity *InitTextureEntity(int x, int y, int w, int h,
                             SDL_Renderer *renderer, const char *image_path)
@@ -133,6 +72,12 @@ static Entity *InitTextureEntity(int x, int y, int w, int h,
     return ent;
 }
 
+
+/*
+==============
+Player Entity
+==============
+*/
 Entity *InitPlayerEntity(SDL_Renderer *renderer)
 {
     Entity *ent = InitTextureEntity(PLAYER_SHIP_X, PLAYER_SHIP_Y, MF_W, MF_H, renderer, MF_IMG);
@@ -147,13 +92,31 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
     return ent;
 }
 
-Entity *InitBoltEntity(int w, int h, int vel, int damage,
-                        Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer)
+{
+    SDL_RenderCopy(renderer, ship->texture, NULL, &ship->box);
+}
+
+void AppendEntityPlayer(Entities *ents, Entity *player)
+{
+    if (!(IsEntitiesFull(ents)))
+    {
+        ents->elems[ents->size++] = player;
+    }
+}
+
+
+/*
+==============
+Bolt Entity
+==============
+*/
+Entity *InitBoltEntity(BoltComponent *bolt)
 {
     Entity *ent = malloc(sizeof(Entity));
 
-    ent->vel = vel;
-    ent->damage = damage;
+    ent->vel = bolt->vel;
+    ent->damage = bolt->damage;
     ent->health = 0;
     ent->type = ET_BOLT;
 
@@ -162,19 +125,66 @@ Entity *InitBoltEntity(int w, int h, int vel, int damage,
 
     ent->box.x = 0;
     ent->box.y = 0;
-    ent->box.w = w;
-    ent->box.h = h;
+    ent->box.w = bolt->w;
+    ent->box.h = bolt->h;
 
-    ent->color.r = r;
-    ent->color.g = g;
-    ent->color.b = b;
-    ent->color.a = a;
+    ent->color.r = bolt->r;
+    ent->color.g = bolt->g;
+    ent->color.b = bolt->b;
+    ent->color.a = bolt->a;
 
     ent->texture = NULL;
 
     return ent;
 }
 
+static bool IsBoltOutOfBounds(Entity *bolt)
+{
+    if ((bolt->box.y + bolt->box.h) >= 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer)
+{
+    bolt->box.y -= bolt->vel;
+    SDL_SetRenderDrawColor(renderer, bolt->color.r, bolt->color.g, bolt->color.b, bolt->color.a);
+    SDL_RenderFillRect(renderer, &bolt->box);
+}
+
+void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box)
+{
+    if (!(IsEntitiesFull(ents)))
+    {
+        ents->elems[ents->size] = bolt;
+        ents->elems[ents->size]->box.x = player_box->x + (player_box->w / 2);
+        ents->elems[ents->size]->box.y = player_box->y - ents->elems[ents->size]->box.h;
+        ents->size++;
+    }
+}
+
+void SetBoltComp(BoltComponent *bolt, int w, int h, int vel,
+                    int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+{
+    bolt->w = w;
+    bolt->h = h;
+    bolt->vel = vel;
+    bolt->damage = damage;
+    bolt->r = r;
+    bolt->g = g;
+    bolt->b = b;
+    bolt->a = a;
+}
+
+
+/*
+==============
+Asteroid Entity
+==============
+*/
 Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 {
     int x = rand() % (SCREEN_WIDTH - ASTER_SIZE);
@@ -191,6 +201,36 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
     return aster;
 }
 
+static bool IsAsterOutOfBounds(Entity *aster)
+{
+    if (aster->box.y <= SCREEN_HEIGHT)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer)
+{
+    aster->box.y += aster->vel;
+    SDL_RenderCopy(renderer, aster->texture, NULL, &aster->box);
+}
+
+void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
+{
+    if (!(IsEntitiesFull(ents)))
+    {
+        ents->elems[ents->size++] = InitAsteroidEntity(renderer);
+    }
+}
+
+
+/*
+==============
+Power Up Entity
+==============
+*/
 Entity *InitPowerUpEntity(void)
 {
     Entity *power_up = malloc(sizeof(Entity));
@@ -216,31 +256,34 @@ Entity *InitPowerUpEntity(void)
     return power_up;
 }
 
-void AppendEntityPlayer(Entities *ents, Entity *player)
+static bool IsPowerUpOutOfBounds(Entity *power_up)
 {
-    if (!(IsEntitiesFull(ents)))
+    if (power_up->box.y <= SCREEN_HEIGHT)
     {
-        ents->elems[ents->size++] = player;
+        return false;
     }
+
+    return true;
 }
 
-void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box)
+static void SetRGBPowerUp(Entity *power_up)
 {
-    if (!(IsEntitiesFull(ents)))
-    {
-        ents->elems[ents->size] = bolt;
-        ents->elems[ents->size]->box.x = player_box->x + (player_box->w / 2);
-        ents->elems[ents->size]->box.y = player_box->y - ents->elems[ents->size]->box.h;
-        ents->size++;
-    }
+    power_up->color.r = (Uint8)(rand() % 256);
+    power_up->color.g = (Uint8)(rand() % 256);
+    power_up->color.b = (Uint8)(rand() % 256);
 }
 
-void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
+static void RenderEntityPowerUp(Entity *power_up, SDL_Renderer *renderer)
 {
-    if (!(IsEntitiesFull(ents)))
+    power_up->box.y += power_up->vel;
+
+    if ((power_up->box.y % 20) == 0)
     {
-        ents->elems[ents->size++] = InitAsteroidEntity(renderer);
+        SetRGBPowerUp(power_up);
     }
+
+    SDL_SetRenderDrawColor(renderer, power_up->color.r, power_up->color.g, power_up->color.b, power_up->color.a);
+    SDL_RenderFillRect(renderer, &power_up->box);
 }
 
 void AppendEntityPowerUp(Entities *ents)
@@ -249,6 +292,101 @@ void AppendEntityPowerUp(Entities *ents)
     {
         ents->elems[ents->size++] = InitPowerUpEntity();
     }
+}
+
+
+/*
+==============
+Entities
+==============
+*/
+static void FreeEntity(Entities *ents, int index)
+{
+    SDL_DestroyTexture(ents->elems[index]->texture);
+    free(ents->elems[index]);
+}
+
+static void RemoveEntityFromArray(Entities *ents, int index)
+{
+    FreeEntity(ents, index);
+
+    for (int i = index; i < (ents->size - 1); i++)
+    {
+        ents->elems[i] = ents->elems[i + 1];
+    }
+
+    ents->size--;
+}
+
+static bool IsEntitiesFull(Entities *ents)
+{
+    if (ents->size == ents->capacity)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void RenderEntities(Entities *ents, SDL_Renderer *renderer)
+{
+    int i = 1;
+    Entity *curr_ent = ents->elems[PLAYER_ENT];
+
+    // The first index is the player.
+    curr_ent->RenderEntity(curr_ent, renderer);
+
+    while (i < ents->size)
+    {
+        curr_ent = ents->elems[i];
+
+        if (curr_ent->IsEntOutOfBounds(curr_ent))
+        {
+            RemoveEntityFromArray(ents, i);
+            continue;
+        }
+
+        curr_ent->RenderEntity(curr_ent, renderer);
+        i++;
+    }
+}
+
+void FreeEntities(Entities *ents)
+{
+    for (int i = PLAYER_ENT; i < ents->size; i++)
+    {
+        FreeEntity(ents, i);
+    }
+}
+
+
+/*
+==============
+Entity Damages
+==============
+*/
+static void DoEntityDamages(Entities *ents, int sender, int receiver)
+{
+    Entity *ent_sender = ents->elems[sender];
+    Entity *ent_receiver = ents->elems[receiver];
+
+    if ((ent_sender->health - ent_receiver->damage) <= 0)
+    {
+        // Don't remove the player.
+        if (sender == PLAYER_ENT)
+        {
+            printf("You lost.\n");
+            exit(1);
+        }
+
+        RemoveEntityFromArray(ents, sender);
+    }
+    else
+    {
+        ent_sender->health -= ent_receiver->damage;
+    }
+
+    printf("CALLED\n");
 }
 
 static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
@@ -266,7 +404,7 @@ EntityType DetectEntityCollision(Entities *ents)
     EntityType sender = ET_NONE;
     EntityType receiver = ET_NONE;
 
-    for (int i = 0; i < ents->size; i++)
+    for (int i = PLAYER_ENT; i < ents->size; i++)
     {
         for (int j = 1; j < ents->size; j++)
         {
@@ -282,8 +420,8 @@ EntityType DetectEntityCollision(Entities *ents)
                     continue;
                 }
 
-                DoDamages(ents, i, j);
-                DoDamages(ents, j, i);
+                DoEntityDamages(ents, i, j);
+                DoEntityDamages(ents, j, i);
 
                 return receiver;
             }
@@ -291,46 +429,4 @@ EntityType DetectEntityCollision(Entities *ents)
     }
 
     return ET_NONE;
-}
-
-bool IsEntitiesFull(Entities *ents)
-{
-    if (ents->size == ents->capacity)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-void RenderEntities(Entities *ents, SDL_Renderer *renderer)
-{
-    int i = 1;
-    Entity *curr_ent = ents->elems[0];
-
-    // The first index is the player.
-    curr_ent->RenderEntity(curr_ent, renderer);
-
-    while (i < ents->size)
-    {
-        curr_ent = ents->elems[i];
-
-        if (curr_ent->IsEntOutOfBounds(curr_ent))
-        {
-            RemoveEnt(ents, i);
-            continue;
-        }
-
-        curr_ent->RenderEntity(curr_ent, renderer);
-        i++;
-    }
-}
-
-void FreeEntities(Entities *ents)
-{
-    for (int i = 0; i < ents->size; i++)
-    {
-        SDL_DestroyTexture(ents->elems[i]->texture);
-        free(ents->elems[i]);
-    }
 }

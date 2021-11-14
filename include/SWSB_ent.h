@@ -5,7 +5,8 @@
 #include <SDL2/SDL.h>
 #include "SWSB_assets.h"
 
-#define MAX_ENTS 1024
+#define PLAYER_ENT      0
+#define MAX_ENTS        1024
 
 typedef enum
 {
@@ -38,21 +39,69 @@ typedef struct Entities
     Entity *elems[MAX_ENTS];
 } Entities;
 
-Entity *InitPlayerEntity(SDL_Renderer *renderer);
-Entity *InitBoltEntity(int w, int h, int vel, int damage,
-                        Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-Entity *InitAsteroidEntity(SDL_Renderer *renderer);
-Entity *InitPowerUpEntity(void);
+typedef struct
+{
+    int w;
+    int h;
+    int vel;
+    int damage;
+    Uint8 r;
+    Uint8 g;
+    Uint8 b;
+    Uint8 a;
+} BoltComponent;
 
+/*
+==============
+Player Entity
+==============
+*/
+Entity *InitPlayerEntity(SDL_Renderer *renderer);
 void AppendEntityPlayer(Entities *ents, Entity *player);
+
+
+/*
+==============
+Bolt Entity
+==============
+*/
+Entity *InitBoltEntity(BoltComponent *bolt);
 void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box);
+void SetBoltComp(BoltComponent *bolt, int w, int h, int vel,
+                    int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+
+
+/*
+==============
+Asteroid Entity
+==============
+*/
+Entity *InitAsteroidEntity(SDL_Renderer *renderer);
 void AppendEntityAster(Entities *ents, SDL_Renderer *renderer);
+
+
+/*
+==============
+Power Up Entity
+==============
+*/
+Entity *InitPowerUpEntity(void);
 void AppendEntityPowerUp(Entities *ents);
 
-EntityType DetectEntityCollision(Entities *ents);
 
-bool IsEntitiesFull(Entities *ents);
+/*
+==============
+Entities
+==============
+*/
 void RenderEntities(Entities *ents, SDL_Renderer *renderer);
 void FreeEntities(Entities *ents);
+
+/*
+==============
+Entity Damages
+==============
+*/
+EntityType DetectEntityCollision(Entities *ents);
 
 #endif /* SWSB_ENT_H */

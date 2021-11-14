@@ -38,6 +38,8 @@
 #define PW_IST              5000
 #define PW_CST              (PW_IST * 10)
 
+#define PW_FAST             10000
+
 SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path);
 
 #endif /* SWSB_ASSETS_H */

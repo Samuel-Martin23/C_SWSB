@@ -14,7 +14,8 @@ void RunSWSB(void)
     Uint32 powerup_next_spawn = PW_IST;
     EntityType type = ET_NONE;
 
-    SDL_Color c = {255, 0, 0, 255};
+    BoltComponent bolt = {2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255};
+    Uint32 powerup_expired = 0;
 
     AppendEntityPlayer(&total_ents, player_ship);
 
@@ -45,16 +46,19 @@ void RunSWSB(void)
 
         if (type == ET_POWERUP)
         {
-            c.r = 0;
-            c.g = 255;
-            c.b = 0;
-            c.a = 255;
+            SetBoltComp(&bolt, 2, 20, SHOT_VEL*2, SHOT_DAMAGE, 0, 255, 0, 255);
+            powerup_expired = handler.time + PW_FAST;
+        }
+
+        if (handler.time > powerup_expired)
+        {
+            SetBoltComp(&bolt, 2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255);
         }
 
         if (handler.keyboard[SDL_SCANCODE_SPACE]
             && handler.time > player_next_shot)
         {
-            player_bolt = InitBoltEntity(2, 20, SHOT_VEL, SHOT_DAMAGE, c.r, c.g, c.b, c.a);
+            player_bolt = InitBoltEntity(&bolt);
             AppendEntityBolt(&total_ents, player_bolt, &player_ship->box);
             player_next_shot = handler.time + PLAYER_FT;
         }
