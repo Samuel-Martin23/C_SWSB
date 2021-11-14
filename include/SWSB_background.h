@@ -13,7 +13,7 @@ typedef struct
     SDL_Texture *texture;
 } Background;
 
-Background InitBackground(SDL_Renderer *renderer, int width, int height);
+Background InitBackground(SDL_Renderer *renderer);
 void RenderBackground(Background *background, SDL_Renderer *renderer);
 void FreeBackgroundTexture(Background *background);
 

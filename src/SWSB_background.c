@@ -1,11 +1,11 @@
 #include "../include/SWSB_background.h"
 
-Background InitBackground(SDL_Renderer *renderer, int width, int height)
+Background InitBackground(SDL_Renderer *renderer)
 {
     Background background;
 
-    background.width = width;
-    background.height = height;
+    background.width = SCREEN_WIDTH;
+    background.height = SCREEN_HEIGHT;
 
     background.curr.x = 0;
     background.curr.y = 0;

@@ -3,18 +3,20 @@
 void RunSWSB(void)
 {
     Handler handler = InitHandler(GAME_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    Background background = InitBackground(handler.wrenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    Background background = InitBackground(handler.wrenderer);
 
-    Entity *player_ship = InitPlayerEntity(PLAYER_SHIP_X, PLAYER_SHIP_Y, MF_W, MF_H, 5, 250, handler.wrenderer, MF_IMG);
+    Entity *player_ship = InitPlayerEntity(handler.wrenderer);
     Entity *player_bolt = NULL;
     Entities total_ents = {0, MAX_ENTS, {}};
 
     Uint32 player_next_shot = 0;
-    Uint32 aster_next_spawn = 0;
+    Uint32 aster_next_spawn = ASTER_IST;
+    Uint32 powerup_next_spawn = PW_IST;
+    EntityType type = ET_NONE;
 
-    bool render_asteroids = false;
+    SDL_Color c = {255, 0, 0, 255};
 
-    AppenedEntityPlayer(&total_ents, player_ship);
+    AppendEntityPlayer(&total_ents, player_ship);
 
     while (true)
     {
@@ -30,11 +32,6 @@ void RunSWSB(void)
             break;
         }
 
-        if (handler.time >= 5000 && !(render_asteroids))
-        {
-            render_asteroids = true;
-        }
-
         if (handler.keyboard[SDL_SCANCODE_A] && player_ship->box.x > 0)
         {
             player_ship->box.x -= player_ship->vel; 
@@ -44,21 +41,34 @@ void RunSWSB(void)
             player_ship->box.x += player_ship->vel;
         }
 
-        if (handler.keyboard[SDL_SCANCODE_SPACE]
-            && !(IsEntitiesFull(&total_ents))
-            && handler.time > player_next_shot)
+        type = DetectEntityCollision(&total_ents);
+
+        if (type == ET_POWERUP)
         {
-            player_bolt = InitBoltEntity(2, 20, 10, 255, 0, 0, 255);
-            AppendEntityBolt(&total_ents, player_bolt, &player_ship->box);
-            player_next_shot = handler.time + player_ship->firetime;
+            c.r = 0;
+            c.g = 255;
+            c.b = 0;
+            c.a = 255;
         }
 
-        if (render_asteroids
-            && handler.time > aster_next_spawn
-            && !(IsEntitiesFull(&total_ents)))
+        if (handler.keyboard[SDL_SCANCODE_SPACE]
+            && handler.time > player_next_shot)
+        {
+            player_bolt = InitBoltEntity(2, 20, SHOT_VEL, SHOT_DAMAGE, c.r, c.g, c.b, c.a);
+            AppendEntityBolt(&total_ents, player_bolt, &player_ship->box);
+            player_next_shot = handler.time + PLAYER_FT;
+        }
+
+        if (handler.time > aster_next_spawn)
         {
             AppendEntityAster(&total_ents, handler.wrenderer);
-            aster_next_spawn = handler.time + 4000;
+            aster_next_spawn = handler.time + ASTER_CST;
+        }
+
+        if (handler.time > powerup_next_spawn)
+        {
+            AppendEntityPowerUp(&total_ents);
+            powerup_next_spawn = handler.time + PW_CST;
         }
 
         RenderBackground(&background, handler.wrenderer);

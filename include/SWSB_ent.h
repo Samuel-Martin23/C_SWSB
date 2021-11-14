@@ -7,10 +7,21 @@
 
 #define MAX_ENTS 1024
 
+typedef enum
+{
+    ET_NONE,
+    ET_PLAYER,
+    ET_BOLT,
+    ET_ASTER,
+    ET_POWERUP
+} EntityType;
+
 typedef struct Entity
 {
     int vel;
-    Uint32 firetime;
+    int damage;
+    int health;
+    EntityType type;
 
     bool (*IsEntOutOfBounds)(struct Entity *ent);
     void (*RenderEntity)(struct Entity *ent, SDL_Renderer *renderer);
@@ -27,23 +38,18 @@ typedef struct Entities
     Entity *elems[MAX_ENTS];
 } Entities;
 
-Entity *InitTextureEntity(int x, int y, int w, int h,
-                            SDL_Renderer *renderer, const char *image_path);
-
-Entity *InitPlayerEntity(int x, int y, int w, int h,
-                        int vel, Uint32 firetime, SDL_Renderer *renderer,
-                        const char *image_path);
-
-Entity *InitBoltEntity(int w, int h, int vel, 
+Entity *InitPlayerEntity(SDL_Renderer *renderer);
+Entity *InitBoltEntity(int w, int h, int vel, int damage,
                         Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+Entity *InitAsteroidEntity(SDL_Renderer *renderer);
+Entity *InitPowerUpEntity(void);
 
-Entity *InitAsteroidEntity(int x, int y, int w, int h,
-                            int vel, SDL_Renderer *renderer,
-                            const char *image_path);
-
-void AppenedEntityPlayer(Entities *ents, Entity *player);
+void AppendEntityPlayer(Entities *ents, Entity *player);
 void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box);
 void AppendEntityAster(Entities *ents, SDL_Renderer *renderer);
+void AppendEntityPowerUp(Entities *ents);
+
+EntityType DetectEntityCollision(Entities *ents);
 
 bool IsEntitiesFull(Entities *ents);
 void RenderEntities(Entities *ents, SDL_Renderer *renderer);
