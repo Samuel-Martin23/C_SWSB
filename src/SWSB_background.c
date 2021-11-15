@@ -24,8 +24,8 @@ Background InitBackground(SDL_Renderer *renderer)
 
 void RenderBackground(Background *background, SDL_Renderer *renderer)
 {
-    background->curr.y += 2;
-    background->next.y += 2;
+    background->curr.y += BACKGROUND_VEL;
+    background->next.y += BACKGROUND_VEL;
 
     if (background->curr.y >= background->height)
     {

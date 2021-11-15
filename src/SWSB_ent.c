@@ -204,7 +204,7 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 
 static bool IsAsterOutOfBounds(Entity *aster)
 {
-    if ((aster->box.y + (aster->box.h/4)) >= SCREEN_HEIGHT)
+    if ((aster->box.y + (aster->box.h/3)) >= SCREEN_HEIGHT)
     {
         return true;
     }
