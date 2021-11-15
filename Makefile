@@ -12,7 +12,7 @@ OBJECTS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SOURCES))
 HEADERS := $(wildcard $(INCLUDE)/*.h)
 
 $(BUILD)/$(NAME): $(OBJECTS)
-	$(CC) $^ -o $@ -L/usr/local/lib -lSDL2 -lSDL2_image
+	$(CC) $^ -o $@ -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_ttf
 
 $(OBJ)/%.o: $(SRC)/%.c $(HEADERS)
 	$(CC) $(FLAGS) -c $< -o $@

@@ -18,7 +18,7 @@ SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path)
 
     if (image_texuare == NULL)
     {
-        printf("Could not create image texuare: %s\n", SDL_GetError());
+        printf("Could not create image texture: %s\n", SDL_GetError());
         exit(1);
     }
 

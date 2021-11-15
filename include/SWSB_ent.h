@@ -12,7 +12,7 @@ typedef enum
 {
     ET_NONE,
     ET_PLAYER,
-    ET_BOLT,
+    ET_PLAYER_BOLT,
     ET_ASTER,
     ET_POWERUP
 } EntityType;
@@ -51,6 +51,14 @@ typedef struct
     Uint8 a;
 } BoltComponent;
 
+typedef struct
+{
+    EntityType sender;
+    EntityType receiver;
+    bool is_sender_destroyed;
+    bool is_receiver_destroyed;
+} EntityCollision;
+
 /*
 ==============
 Player Entity
@@ -65,7 +73,7 @@ void AppendEntityPlayer(Entities *ents, Entity *player);
 Bolt Entity
 ==============
 */
-Entity *InitBoltEntity(BoltComponent *bolt);
+Entity *InitBoltEntity(BoltComponent *bolt, EntityType type);
 void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box);
 void SetBoltComponent(BoltComponent *bolt, int w, int h, int vel,
                         int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
@@ -99,9 +107,9 @@ void FreeEntities(Entities *ents);
 
 /*
 ==============
-Entity Damages
+Entity Collision
 ==============
 */
-EntityType DetectEntityCollision(Entities *ents);
+EntityCollision DetectEntityCollision(Entities *ents);
 
 #endif /* SWSB_ENT_H */

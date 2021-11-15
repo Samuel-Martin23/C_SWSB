@@ -9,6 +9,14 @@
 #define SCREEN_WIDTH        800
 #define SCREEN_HEIGHT       600
 
+#define MAX_BUFFER          512
+
+#define GAME_FONT           "../assets/pixel_font.ttf"
+#define SCORE_FONT_SIZE     20
+#define SCORE_MAX_BUFFER    10
+#define SCORE_MAX_SIZE      (SCORE_MAX_BUFFER - 1)
+#define POINTS_PER_FRAME    1
+
 #define BACKGROUND_IMG      "../assets/star_background.png"
 #define BACKGROUND_VEL      2
 
@@ -32,6 +40,7 @@
 #define ASTER_HEALTH        30
 #define ASTER_IST           5000
 #define ASTER_CST           500
+#define ASTER_POINTS        1000
 
 #define SHOT_VEL            (8 + BACKGROUND_VEL)
 #define SHOT_DAMAGE         10

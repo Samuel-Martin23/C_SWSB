@@ -5,6 +5,7 @@
 #include "SWSB_background.h"
 #include "SWSB_ent.h"
 #include "SWSB_handler.h"
+#include "SWSB_screen_text.h"
 
 void RunSWSB(void);
 

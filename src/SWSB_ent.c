@@ -111,14 +111,14 @@ void AppendEntityPlayer(Entities *ents, Entity *player)
 Bolt Entity
 ==============
 */
-Entity *InitBoltEntity(BoltComponent *bolt)
+Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
 {
     Entity *ent = malloc(sizeof(Entity));
 
     ent->vel = bolt->vel;
     ent->damage = bolt->damage;
     ent->health = 0;
-    ent->type = ET_BOLT;
+    ent->type = type;
 
     ent->IsEntOutOfBounds = IsBoltOutOfBounds;
     ent->RenderEntity = RenderEntityBolt;
@@ -363,9 +363,17 @@ void FreeEntities(Entities *ents)
 
 /*
 ==============
-Entity Damages
+Entity Collision
 ==============
 */
+static void SetEmptyEntityCollision(EntityCollision *ec)
+{
+    ec->sender = ET_NONE;
+    ec->receiver = ET_NONE;
+    ec->is_sender_destroyed = false;
+    ec->is_receiver_destroyed = false;
+}
+
 static bool DoEntityDamages(Entities *ents, int sender, int receiver)
 {
     Entity *ent_sender = ents->elems[sender];
@@ -398,15 +406,12 @@ static bool DidPlayerHitPowerUp(EntityType sender, EntityType receiver)
 
 static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
 {
-    return ((sender == ET_BOLT || sender == ET_PLAYER) && receiver == ET_ASTER);
+    return ((sender == ET_PLAYER || sender == ET_PLAYER_BOLT) && receiver == ET_ASTER);
 }
 
-EntityType DetectEntityCollision(Entities *ents)
+EntityCollision DetectEntityCollision(Entities *ents)
 {
-    EntityType sender = ET_NONE;
-    EntityType receiver = ET_NONE;
-    bool is_sender_destroyed = false;
-    bool is_receiver_destroyed = false;
+    EntityCollision ec = {ET_NONE, ET_NONE, false, false};
 
     for (int i = PLAYER_ENT; i < ents->size; i++)
     {
@@ -415,34 +420,35 @@ EntityType DetectEntityCollision(Entities *ents)
             if (ents->elems[i] != ents->elems[j]
                 && SDL_HasIntersection(&ents->elems[i]->box, &ents->elems[j]->box))
             {
-                sender = ents->elems[i]->type;
-                receiver = ents->elems[j]->type;
+                ec.sender = ents->elems[i]->type;
+                ec.receiver = ents->elems[j]->type;
         
-                if (!(DidPlayerSendersHitAster(sender, receiver)
-                    || DidPlayerHitPowerUp(sender, receiver)))
+                if (!(DidPlayerSendersHitAster(ec.sender, ec.receiver)
+                    || DidPlayerHitPowerUp(ec.sender, ec.receiver)))
                 {
                     continue;
                 }
 
                 // I need to check both of them before I free
                 // either one of them.
-                is_sender_destroyed = DoEntityDamages(ents, i, j);
-                is_receiver_destroyed = DoEntityDamages(ents, j, i);
+                ec.is_sender_destroyed = DoEntityDamages(ents, i, j);
+                ec.is_receiver_destroyed = DoEntityDamages(ents, j, i);
 
-                if (is_sender_destroyed)
+                if (ec.is_sender_destroyed)
                 {
                     RemoveEntityFromArray(ents, i);
                 }
 
-                if (is_receiver_destroyed)
+                if (ec.is_receiver_destroyed)
                 {
                     RemoveEntityFromArray(ents, j);
                 }
 
-                return receiver;
+                return ec;
             }
         }
     }
 
-    return ET_NONE;
+    SetEmptyEntityCollision(&ec);
+    return ec;
 }
