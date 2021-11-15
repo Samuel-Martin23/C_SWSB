@@ -60,7 +60,7 @@ void SetScoreScreenText(ScreenText *st, int score, SDL_Renderer *renderer)
         j++;
     }
 
-    SDL_DestroyTexture(st->texture);
+    FreeScreenText(st);
     SetScreenTextTexture(renderer, st);
 }
 

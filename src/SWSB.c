@@ -71,7 +71,8 @@ void RunSWSB(void)
         */
         ec = DetectEntityCollision(&total_ents);
 
-        if (ec.sender == ET_PLAYER && ec.receiver == ET_POWERUP)
+        if (!(ec.is_sender_destroyed) && ec.is_receiver_destroyed
+            && ec.sender == ET_PLAYER && ec.receiver == ET_POWERUP)
         {
             SetBoltComponent(&bolt, 2, 20, SHOT_VEL*2, SHOT_DAMAGE, 0, 255, 0, 255);
             powerup_expired = handler.time + PW_FAST;
@@ -109,12 +110,12 @@ void RunSWSB(void)
         */
         current_score += POINTS_PER_FRAME;
 
-        if (ec.is_receiver_destroyed
+        if (ec.is_sender_destroyed && ec.is_receiver_destroyed
             && ec.sender == ET_PLAYER_BOLT && ec.receiver == ET_ASTER)
         {
             current_score += ASTER_POINTS;
         }
-        
+
         SetScoreScreenText(&game_score, current_score, handler.wrenderer);
 
 
