@@ -140,7 +140,7 @@ Entity *InitBoltEntity(BoltComponent *bolt)
 
 static bool IsBoltOutOfBounds(Entity *bolt)
 {
-    if ((bolt->box.y + bolt->box.h) >= 0)
+    if (bolt->box.y > 0)
     {
         return false;
     }
@@ -166,8 +166,8 @@ void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box)
     }
 }
 
-void SetBoltComp(BoltComponent *bolt, int w, int h, int vel,
-                    int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+void SetBoltComponent(BoltComponent *bolt, int w, int h, int vel,
+                        int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     bolt->w = w;
     bolt->h = h;
@@ -375,8 +375,8 @@ static void DoEntityDamages(Entities *ents, int sender, int receiver)
         // Don't remove the player.
         if (sender == PLAYER_ENT)
         {
-            printf("You lost.\n");
-            exit(1);
+            ent_sender->health = 0;
+            return;
         }
 
         RemoveEntityFromArray(ents, sender);
@@ -385,8 +385,6 @@ static void DoEntityDamages(Entities *ents, int sender, int receiver)
     {
         ent_sender->health -= ent_receiver->damage;
     }
-
-    printf("CALLED\n");
 }
 
 static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)

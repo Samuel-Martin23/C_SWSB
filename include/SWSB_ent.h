@@ -67,8 +67,8 @@ Bolt Entity
 */
 Entity *InitBoltEntity(BoltComponent *bolt);
 void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box);
-void SetBoltComp(BoltComponent *bolt, int w, int h, int vel,
-                    int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+void SetBoltComponent(BoltComponent *bolt, int w, int h, int vel,
+                        int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 
 
 /*

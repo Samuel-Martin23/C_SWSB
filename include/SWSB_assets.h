@@ -27,7 +27,7 @@
 #define ASTER_DAMAGE        100
 #define ASTER_HEALTH        30
 #define ASTER_IST           5000
-#define ASTER_CST           4000
+#define ASTER_CST           500
 
 #define SHOT_VEL            10
 #define SHOT_DAMAGE         10

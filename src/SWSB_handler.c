@@ -26,7 +26,22 @@ Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
     handler.keyboard = SDL_GetKeyboardState(NULL);
     handler.time = 0;
 
+    memset(handler.is_key_pressed, 0, 512);
+
     return handler;
+}
+
+void CheckGamePaused(Handler *handler, bool *is_paused)
+{
+    if (handler->keyboard[SDL_SCANCODE_ESCAPE] && !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]))
+    {
+        *is_paused = !(*is_paused);
+        handler->is_key_pressed[SDL_SCANCODE_ESCAPE] = !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]);
+    }
+    else if (!(handler->keyboard[SDL_SCANCODE_ESCAPE]) && handler->is_key_pressed[SDL_SCANCODE_ESCAPE])
+    {
+        handler->is_key_pressed[SDL_SCANCODE_ESCAPE] = !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]);
+    }
 }
 
 void SetFrameRate(Handler *handler)
