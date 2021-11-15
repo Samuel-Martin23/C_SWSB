@@ -80,7 +80,7 @@ Player Entity
 */
 Entity *InitPlayerEntity(SDL_Renderer *renderer)
 {
-    Entity *ent = InitTextureEntity(PLAYER_SHIP_X, PLAYER_SHIP_Y, MF_W, MF_H, renderer, MF_IMG);
+    Entity *ent = InitTextureEntity(PLAYER_X, PLAYER_Y, PLAYER_W, PLAYER_H, renderer, MF_IMG);
 
     ent->vel = PLAYER_VEL;
     ent->damage = PLAYER_DAMAGE;
@@ -187,8 +187,9 @@ Asteroid Entity
 */
 Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 {
-    int x = rand() % (SCREEN_WIDTH - ASTER_SIZE);
-    Entity *aster = InitTextureEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE, renderer, ASTER_GRAY_IMG);
+    int x = (rand() % (SCREEN_WIDTH - (ASTER_SIZE + PLAYER_HALF_W))) + PLAYER_QTR_W;
+    const char *aster_img = (rand() % 4) ? ASTER_GRAY_IMG : ASTER_BROWN_IMG;
+    Entity *aster = InitTextureEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE, renderer, aster_img);
 
     aster->vel = ASTER_VEL;
     aster->damage = ASTER_DAMAGE;
@@ -203,12 +204,12 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 
 static bool IsAsterOutOfBounds(Entity *aster)
 {
-    if (aster->box.y <= SCREEN_HEIGHT)
+    if ((aster->box.y + (aster->box.h/4)) >= SCREEN_HEIGHT)
     {
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer)
@@ -365,31 +366,29 @@ void FreeEntities(Entities *ents)
 Entity Damages
 ==============
 */
-static void DoEntityDamages(Entities *ents, int sender, int receiver)
+static bool DoEntityDamages(Entities *ents, int sender, int receiver)
 {
     Entity *ent_sender = ents->elems[sender];
     Entity *ent_receiver = ents->elems[receiver];
+    int ent_health = ent_sender->health - ent_receiver->damage;
 
-    if ((ent_sender->health - ent_receiver->damage) <= 0)
+    if (ent_health <= 0)
     {
         // Don't remove the player.
         if (sender == PLAYER_ENT)
         {
             ent_sender->health = 0;
-            return;
+            return false;
         }
 
-        RemoveEntityFromArray(ents, sender);
+        return true;
     }
     else
     {
-        ent_sender->health -= ent_receiver->damage;
+        ent_sender->health = ent_health;
     }
-}
 
-static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
-{
-    return ((sender == ET_BOLT || sender == ET_PLAYER) && receiver == ET_ASTER);
+    return false;
 }
 
 static bool DidPlayerHitPowerUp(EntityType sender, EntityType receiver)
@@ -397,10 +396,17 @@ static bool DidPlayerHitPowerUp(EntityType sender, EntityType receiver)
     return (sender == ET_PLAYER && receiver == ET_POWERUP);
 }
 
+static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
+{
+    return ((sender == ET_BOLT || sender == ET_PLAYER) && receiver == ET_ASTER);
+}
+
 EntityType DetectEntityCollision(Entities *ents)
 {
     EntityType sender = ET_NONE;
     EntityType receiver = ET_NONE;
+    bool is_sender_destroyed = false;
+    bool is_receiver_destroyed = false;
 
     for (int i = PLAYER_ENT; i < ents->size; i++)
     {
@@ -418,8 +424,20 @@ EntityType DetectEntityCollision(Entities *ents)
                     continue;
                 }
 
-                DoEntityDamages(ents, i, j);
-                DoEntityDamages(ents, j, i);
+                // I need to check both of them before I free
+                // either one of them.
+                is_sender_destroyed = DoEntityDamages(ents, i, j);
+                is_receiver_destroyed = DoEntityDamages(ents, j, i);
+
+                if (is_sender_destroyed)
+                {
+                    RemoveEntityFromArray(ents, i);
+                }
+
+                if (is_receiver_destroyed)
+                {
+                    RemoveEntityFromArray(ents, j);
+                }
 
                 return receiver;
             }

@@ -26,7 +26,9 @@ Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
     handler.keyboard = SDL_GetKeyboardState(NULL);
     handler.time = 0;
 
-    memset(handler.is_key_pressed, 0, 512);
+    memset(handler.is_key_pressed, 0, SDL_NUM_SCANCODES);
+
+    srand((unsigned int)time(NULL));
 
     return handler;
 }

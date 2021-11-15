@@ -11,17 +11,20 @@
 
 #define BACKGROUND_IMG      "../assets/star_background.png"
 
-#define MF_IMG              "../assets/millennium_falcon.png"
-#define MF_W                100
-#define MF_H                100
-#define PLAYER_SHIP_X       (SCREEN_WIDTH / 2) - (MF_W / 2)
-#define PLAYER_SHIP_Y       SCREEN_HEIGHT - MF_H
+#define MF_IMG              "../assets/millennium_falcon.png"            
+#define PLAYER_X            ((SCREEN_WIDTH / 2) - (PLAYER_W / 2))
+#define PLAYER_Y            (SCREEN_HEIGHT - PLAYER_H)
+#define PLAYER_W            100
+#define PLAYER_H            100
+#define PLAYER_HALF_W       (PLAYER_W / 2)   
+#define PLAYER_QTR_W        (PLAYER_W / 4)
 #define PLAYER_VEL          8
 #define PLAYER_DAMAGE       5
 #define PLAYER_HEALTH       100
 #define PLAYER_FT           225
 
 #define ASTER_GRAY_IMG      "../assets/asteroid_gray.png"
+#define ASTER_BROWN_IMG     "../assets/asteroid_brown.png"
 #define ASTER_SIZE          50
 #define ASTER_VEL           3
 #define ASTER_DAMAGE        100
