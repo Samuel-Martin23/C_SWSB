@@ -12,6 +12,7 @@ void RunSWSB(void)
     Uint32 player_next_shot = 0;
     Uint32 aster_next_spawn = ASTER_IST;
     Uint32 powerup_next_spawn = PW_IST;
+    Uint32 current_ticks = 0;
     EntityCollision ec = {ET_NONE, ET_NONE, false, false};
 
     Uint32 powerup_expired = 0;
@@ -22,9 +23,11 @@ void RunSWSB(void)
 
     AppendEntityPlayer(&total_ents, player_ship);
 
+    StartStopWatch(&handler.timer);
+
     while (true)
     {
-        handler.time = SDL_GetTicks();
+        SetIterationTicks(&handler.timer);
 
         /*
         ==============
@@ -42,9 +45,13 @@ void RunSWSB(void)
 
         if (!(total_ents.elems[PLAYER_ENT]->health) || is_paused)
         {
+            PauseStopWatch(&handler.timer);
             continue;
         }
 
+        ResumeStopWatch(&handler.timer);
+
+        current_ticks = GetStopWatchTicks(&handler.timer);
 
         /*
         ==============
@@ -75,31 +82,31 @@ void RunSWSB(void)
             && ec.sender == ET_PLAYER && ec.receiver == ET_POWERUP)
         {
             SetBoltComponent(&bolt, 2, 20, SHOT_VEL*2, SHOT_DAMAGE, 0, 255, 0, 255);
-            powerup_expired = handler.time + PW_FAST;
+            powerup_expired = current_ticks + PW_FAST;
         }
 
-        if (handler.time > powerup_expired)
+        if (current_ticks > powerup_expired)
         {
             SetBoltComponent(&bolt, 2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255);
         }
 
         if (handler.keyboard[SDL_SCANCODE_SPACE]
-            && handler.time > player_next_shot)
+            && current_ticks > player_next_shot)
         {
             AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->box);
-            player_next_shot = handler.time + PLAYER_FT;
+            player_next_shot = current_ticks + PLAYER_FT;
         }
 
-        if (handler.time > aster_next_spawn)
+        if (current_ticks > aster_next_spawn)
         {
             AppendEntityAster(&total_ents, handler.wrenderer);
-            aster_next_spawn = handler.time + ASTER_CST;
+            aster_next_spawn = current_ticks + ASTER_CST;
         }
 
-        if (handler.time > powerup_next_spawn)
+        if (current_ticks > powerup_next_spawn)
         {
             AppendEntityPowerUp(&total_ents);
-            powerup_next_spawn = handler.time + PW_CST;
+            powerup_next_spawn = current_ticks + PW_CST;
         }
 
 
@@ -132,7 +139,7 @@ void RunSWSB(void)
 
         current_score = 0;
 
-        SetFrameRate(&handler);
+        SetFrameRate(&handler.timer);
     }
 
     FreeScreenText(&game_score);

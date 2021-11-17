@@ -4,12 +4,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
-
-#define FPS 120
+#include "SWSB_timer.h"
 
 typedef struct
 {
-    Uint32 time;
+    Timer timer;
     SDL_Event event;
     SDL_Window *window;
     SDL_Renderer *wrenderer;
@@ -19,7 +18,6 @@ typedef struct
 
 Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags);
 void CheckGamePaused(Handler *handler, bool *is_paused);
-void SetFrameRate(Handler *handler);
 void FreeHandler(Handler *handler);
 
 #endif /* SWSB_HANDLER_H */
