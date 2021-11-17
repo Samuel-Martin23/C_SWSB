@@ -5,7 +5,7 @@
 Player Entity
 ==============
 */
-static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer);
+static void RenderEntityPlayer(Entity *player_ent, SDL_Renderer *renderer);
 
 
 /*
@@ -13,8 +13,8 @@ static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer);
 Bolt Entity
 ==============
 */
-static bool IsBoltOutOfBounds(Entity *bolt);
-static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer);
+static bool IsBoltOutOfBounds(Entity *bolt_ent);
+static void RenderEntityBolt(Entity *bolt_ent, SDL_Renderer *renderer);
 
 
 /*
@@ -22,8 +22,8 @@ static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer);
 Asteroid Entity
 ==============
 */
-static bool IsAsterOutOfBounds(Entity *aster);
-static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer);
+static bool IsAsterOutOfBounds(Entity *aster_ent);
+static void RenderEntityAster(Entity *aster_ent, SDL_Renderer *renderer);
 
 
 /*
@@ -31,9 +31,9 @@ static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer);
 Power Up Entity
 ==============
 */
-static bool IsPowerUpOutOfBounds(Entity *power_up);
-static void SetRGBPowerUp(Entity *power_up);
-static void RenderEntityPowerUp(Entity *power_up, SDL_Renderer *renderer);
+static bool IsPowerUpOutOfBounds(Entity *power_up_ent);
+static void SetRGBPowerUp(Entity *power_up_ent);
+static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer);
 
 
 /*
@@ -48,6 +48,12 @@ static Entity *InitTextureEntity(int x, int y, int w, int h,
                             SDL_Renderer *renderer, const char *image_path)
 {
     Entity *ent = malloc(sizeof(Entity));
+
+    if (ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
 
     ent->vel = 0;
     ent->damage = 0;
@@ -80,28 +86,28 @@ Player Entity
 */
 Entity *InitPlayerEntity(SDL_Renderer *renderer)
 {
-    Entity *ent = InitTextureEntity(PLAYER_X, PLAYER_Y, PLAYER_W, PLAYER_H, renderer, MF_IMG);
+    Entity *player_ent = InitTextureEntity(PLAYER_X, PLAYER_Y, PLAYER_W, PLAYER_H, renderer, MF_IMG);
 
-    ent->vel = PLAYER_VEL;
-    ent->damage = PLAYER_DAMAGE;
-    ent->health = PLAYER_HEALTH;
-    ent->type = ET_PLAYER;
+    player_ent->vel = PLAYER_VEL;
+    player_ent->damage = PLAYER_DAMAGE;
+    player_ent->health = PLAYER_HEALTH;
+    player_ent->type = ET_PLAYER;
 
-    ent->RenderEntity = RenderEntityPlayer;
+    player_ent->RenderEntity = RenderEntityPlayer;
 
-    return ent;
+    return player_ent;
 }
 
-static void RenderEntityPlayer(Entity *ship, SDL_Renderer *renderer)
+static void RenderEntityPlayer(Entity *player_ent, SDL_Renderer *renderer)
 {
-    SDL_RenderCopy(renderer, ship->texture, NULL, &ship->box);
+    SDL_RenderCopy(renderer, player_ent->texture, NULL, &player_ent->box);
 }
 
-void AppendEntityPlayer(Entities *ents, Entity *player)
+void AppendEntityPlayer(Entities *ents, Entity *player_ent)
 {
     if (!(IsEntitiesFull(ents)))
     {
-        ents->elems[ents->size++] = player;
+        ents->elems[ents->size++] = player_ent;
     }
 }
 
@@ -113,34 +119,40 @@ Bolt Entity
 */
 Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
 {
-    Entity *ent = malloc(sizeof(Entity));
+    Entity *bolt_ent = malloc(sizeof(Entity));
 
-    ent->vel = bolt->vel;
-    ent->damage = bolt->damage;
-    ent->health = 0;
-    ent->type = type;
+    if (bolt_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
 
-    ent->IsEntOutOfBounds = IsBoltOutOfBounds;
-    ent->RenderEntity = RenderEntityBolt;
+    bolt_ent->vel = bolt->vel;
+    bolt_ent->damage = bolt->damage;
+    bolt_ent->health = 0;
+    bolt_ent->type = type;
 
-    ent->box.x = 0;
-    ent->box.y = 0;
-    ent->box.w = bolt->w;
-    ent->box.h = bolt->h;
+    bolt_ent->IsEntOutOfBounds = IsBoltOutOfBounds;
+    bolt_ent->RenderEntity = RenderEntityBolt;
 
-    ent->color.r = bolt->r;
-    ent->color.g = bolt->g;
-    ent->color.b = bolt->b;
-    ent->color.a = bolt->a;
+    bolt_ent->box.x = 0;
+    bolt_ent->box.y = 0;
+    bolt_ent->box.w = bolt->w;
+    bolt_ent->box.h = bolt->h;
 
-    ent->texture = NULL;
+    bolt_ent->color.r = bolt->r;
+    bolt_ent->color.g = bolt->g;
+    bolt_ent->color.b = bolt->b;
+    bolt_ent->color.a = bolt->a;
 
-    return ent;
+    bolt_ent->texture = NULL;
+
+    return bolt_ent;
 }
 
-static bool IsBoltOutOfBounds(Entity *bolt)
+static bool IsBoltOutOfBounds(Entity *bolt_ent)
 {
-    if (bolt->box.y > 0)
+    if (bolt_ent->box.y > 0)
     {
         return false;
     }
@@ -148,18 +160,19 @@ static bool IsBoltOutOfBounds(Entity *bolt)
     return true;
 }
 
-static void RenderEntityBolt(Entity *bolt, SDL_Renderer *renderer)
+static void RenderEntityBolt(Entity *bolt_ent, SDL_Renderer *renderer)
 {
-    bolt->box.y -= bolt->vel;
-    SDL_SetRenderDrawColor(renderer, bolt->color.r, bolt->color.g, bolt->color.b, bolt->color.a);
-    SDL_RenderFillRect(renderer, &bolt->box);
+    bolt_ent->box.y -= bolt_ent->vel;
+    SDL_SetRenderDrawColor(renderer, bolt_ent->color.r, bolt_ent->color.g,
+                            bolt_ent->color.b, bolt_ent->color.a);
+    SDL_RenderFillRect(renderer, &bolt_ent->box);
 }
 
-void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box)
+void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *player_box)
 {
     if (!(IsEntitiesFull(ents)))
     {
-        ents->elems[ents->size] = bolt;
+        ents->elems[ents->size] = bolt_ent;
         ents->elems[ents->size]->box.x = player_box->x + (player_box->w / 2);
         ents->elems[ents->size]->box.y = player_box->y - ents->elems[ents->size]->box.h;
         ents->size++;
@@ -189,22 +202,22 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 {
     int x = (rand() % (SCREEN_WIDTH - (ASTER_SIZE + PLAYER_HALF_W))) + PLAYER_QTR_W;
     const char *aster_img = (rand() % 4) ? ASTER_GRAY_IMG : ASTER_BROWN_IMG;
-    Entity *aster = InitTextureEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE, renderer, aster_img);
+    Entity *aster_ent = InitTextureEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE, renderer, aster_img);
 
-    aster->vel = ASTER_VEL;
-    aster->damage = ASTER_DAMAGE;
-    aster->health = ASTER_HEALTH;
-    aster->type = ET_ASTER;
+    aster_ent->vel = ASTER_VEL;
+    aster_ent->damage = ASTER_DAMAGE;
+    aster_ent->health = ASTER_HEALTH;
+    aster_ent->type = ET_ASTER;
 
-    aster->IsEntOutOfBounds = IsAsterOutOfBounds;
-    aster->RenderEntity = RenderEntityAster;
+    aster_ent->IsEntOutOfBounds = IsAsterOutOfBounds;
+    aster_ent->RenderEntity = RenderEntityAster;
 
-    return aster;
+    return aster_ent;
 }
 
-static bool IsAsterOutOfBounds(Entity *aster)
+static bool IsAsterOutOfBounds(Entity *aster_ent)
 {
-    if ((aster->box.y + (aster->box.h/3)) >= SCREEN_HEIGHT)
+    if ((aster_ent->box.y + (aster_ent->box.h/3)) >= SCREEN_HEIGHT)
     {
         return true;
     }
@@ -212,10 +225,10 @@ static bool IsAsterOutOfBounds(Entity *aster)
     return false;
 }
 
-static void RenderEntityAster(Entity *aster, SDL_Renderer *renderer)
+static void RenderEntityAster(Entity *aster_ent, SDL_Renderer *renderer)
 {
-    aster->box.y += aster->vel;
-    SDL_RenderCopy(renderer, aster->texture, NULL, &aster->box);
+    aster_ent->box.y += aster_ent->vel;
+    SDL_RenderCopy(renderer, aster_ent->texture, NULL, &aster_ent->box);
 }
 
 void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
@@ -234,32 +247,38 @@ Power Up Entity
 */
 Entity *InitPowerUpEntity(void)
 {
-    Entity *power_up = malloc(sizeof(Entity));
+    Entity *power_up_ent = malloc(sizeof(Entity));
 
-    power_up->vel = PW_VEL;
-    power_up->damage = 0;
-    power_up->health = 0;
-    power_up->type = ET_POWERUP;
+    if (power_up_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
 
-    power_up->IsEntOutOfBounds = IsPowerUpOutOfBounds;
-    power_up->RenderEntity = RenderEntityPowerUp;
+    power_up_ent->vel = PW_VEL;
+    power_up_ent->damage = 0;
+    power_up_ent->health = 0;
+    power_up_ent->type = ET_POWERUP;
 
-    power_up->box.x = rand() % (SCREEN_WIDTH - PW_WIDTH);
-    power_up->box.y = -PW_HEIGHT;
-    power_up->box.w = PW_WIDTH;
-    power_up->box.h = PW_HEIGHT;
+    power_up_ent->IsEntOutOfBounds = IsPowerUpOutOfBounds;
+    power_up_ent->RenderEntity = RenderEntityPowerUp;
 
-    SetRGBPowerUp(power_up);
-    power_up->color.a = 255;
+    power_up_ent->box.x = rand() % (SCREEN_WIDTH - PW_WIDTH);
+    power_up_ent->box.y = -PW_HEIGHT;
+    power_up_ent->box.w = PW_WIDTH;
+    power_up_ent->box.h = PW_HEIGHT;
 
-    power_up->texture = NULL;
+    SetRGBPowerUp(power_up_ent);
+    power_up_ent->color.a = 255;
 
-    return power_up;
+    power_up_ent->texture = NULL;
+
+    return power_up_ent;
 }
 
-static bool IsPowerUpOutOfBounds(Entity *power_up)
+static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
 {
-    if (power_up->box.y <= SCREEN_HEIGHT)
+    if (power_up_ent->box.y <= SCREEN_HEIGHT)
     {
         return false;
     }
@@ -267,24 +286,25 @@ static bool IsPowerUpOutOfBounds(Entity *power_up)
     return true;
 }
 
-static void SetRGBPowerUp(Entity *power_up)
+static void SetRGBPowerUp(Entity *power_up_ent)
 {
-    power_up->color.r = (Uint8)(rand() % 256);
-    power_up->color.g = (Uint8)(rand() % 256);
-    power_up->color.b = (Uint8)(rand() % 256);
+    power_up_ent->color.r = (Uint8)(rand() % 256);
+    power_up_ent->color.g = (Uint8)(rand() % 256);
+    power_up_ent->color.b = (Uint8)(rand() % 256);
 }
 
-static void RenderEntityPowerUp(Entity *power_up, SDL_Renderer *renderer)
+static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
 {
-    power_up->box.y += power_up->vel;
+    power_up_ent->box.y += power_up_ent->vel;
 
-    if ((power_up->box.y % 20) == 0)
+    if ((power_up_ent->box.y % 20) == 0)
     {
-        SetRGBPowerUp(power_up);
+        SetRGBPowerUp(power_up_ent);
     }
 
-    SDL_SetRenderDrawColor(renderer, power_up->color.r, power_up->color.g, power_up->color.b, power_up->color.a);
-    SDL_RenderFillRect(renderer, &power_up->box);
+    SDL_SetRenderDrawColor(renderer, power_up_ent->color.r, power_up_ent->color.g,
+                            power_up_ent->color.b, power_up_ent->color.a);
+    SDL_RenderFillRect(renderer, &power_up_ent->box);
 }
 
 void AppendEntityPowerUp(Entities *ents)

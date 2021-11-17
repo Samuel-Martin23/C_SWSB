@@ -4,25 +4,25 @@ void RunSWSB(void)
 {
     Handler handler = InitHandler(GAME_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     Background background = InitBackground(handler.wrenderer);
-
-    Entity *player_ship = InitPlayerEntity(handler.wrenderer);
     Entities total_ents = {0, MAX_ENTS, {NULL}};
     ScreenText game_score = InitScreenTextScore(handler.wrenderer, "000000000");
+
+    Entity *player_ship = InitPlayerEntity(handler.wrenderer);
+
+    EntityCollision ec = {ET_NONE, ET_NONE, false, false};
+    BoltComponent bolt = {2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255};
 
     Uint32 player_next_shot = 0;
     Uint32 aster_next_spawn = ASTER_IST;
     Uint32 powerup_next_spawn = PW_IST;
-    Uint32 current_ticks = 0;
-    EntityCollision ec = {ET_NONE, ET_NONE, false, false};
-
     Uint32 powerup_expired = 0;
-    BoltComponent bolt = {2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255};
+    Uint32 current_ticks = 0;
 
     bool is_paused = false;
     int current_score = 0;
 
-    AppendEntityPlayer(&total_ents, player_ship);
 
+    AppendEntityPlayer(&total_ents, player_ship);
     StartStopWatch(&handler.timer);
 
     while (true)

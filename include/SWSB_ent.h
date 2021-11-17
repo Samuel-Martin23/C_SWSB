@@ -65,7 +65,7 @@ Player Entity
 ==============
 */
 Entity *InitPlayerEntity(SDL_Renderer *renderer);
-void AppendEntityPlayer(Entities *ents, Entity *player);
+void AppendEntityPlayer(Entities *ents, Entity *player_ent);
 
 
 /*
@@ -74,7 +74,7 @@ Bolt Entity
 ==============
 */
 Entity *InitBoltEntity(BoltComponent *bolt, EntityType type);
-void AppendEntityBolt(Entities *ents, Entity *bolt, SDL_Rect *player_box);
+void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *player_box);
 void SetBoltComponent(BoltComponent *bolt, int w, int h, int vel,
                         int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 
