@@ -8,6 +8,8 @@
 #define PLAYER_ENT      0
 #define MAX_ENTS        1024
 
+#define MAX_TEXTURES    10
+
 typedef enum
 {
     ET_NONE,
@@ -17,19 +19,39 @@ typedef enum
     ET_POWERUP
 } EntityType;
 
+typedef enum
+{
+    MF_SPRITE_IDLE,
+    MF_SPRITE_FLYING,
+
+    MF_SPRITE_NUM,
+
+
+    ASTER_SPRITE_1,
+    ASTER_SPRITE_2,
+    ASTER_SPRITE_3,
+    ASTER_SPRITE_4,
+
+    ASTER_SPRITE_NUM
+} SpriteType;
+
 typedef struct Entity
 {
     int vel;
     int damage;
     int health;
-    EntityType type;
+    EntityType ent_type;
 
     bool (*IsEntOutOfBounds)(struct Entity *ent);
     void (*RenderEntity)(struct Entity *ent, SDL_Renderer *renderer);
 
     SDL_Rect box;
     SDL_Color color;
-    SDL_Texture *texture;
+
+    Uint32 sprite_speed;
+    Uint32 sprite_frames;
+    SpriteType sprite_type;
+    SDL_Texture *textures[MAX_TEXTURES];
 } Entity;
 
 typedef struct Entities

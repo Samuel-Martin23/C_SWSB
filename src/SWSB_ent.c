@@ -44,41 +44,6 @@ Entities
 static bool IsEntitiesFull(Entities *ents);
 
 
-static Entity *InitTextureEntity(int x, int y, int w, int h,
-                            SDL_Renderer *renderer, const char *image_path)
-{
-    Entity *ent = malloc(sizeof(Entity));
-
-    if (ent == NULL)
-    {
-        printf("Could not allocate memory.\n");
-        exit(1);
-    }
-
-    ent->vel = 0;
-    ent->damage = 0;
-    ent->health = 0;
-    ent->type = ET_NONE;
-
-    ent->IsEntOutOfBounds = NULL;
-    ent->RenderEntity = NULL;
-
-    ent->box.x = x;
-    ent->box.y = y;
-    ent->box.w = w;
-    ent->box.h = h;
-
-    ent->color.r = 0;
-    ent->color.g = 0;
-    ent->color.b = 0;
-    ent->color.a = 255;
-
-    ent->texture = GetImageTexture(renderer, image_path);
-
-    return ent;
-}
-
-
 /*
 ==============
 Player Entity
@@ -86,21 +51,50 @@ Player Entity
 */
 Entity *InitPlayerEntity(SDL_Renderer *renderer)
 {
-    Entity *player_ent = InitTextureEntity(PLAYER_X, PLAYER_Y, PLAYER_W, PLAYER_H, renderer, MF_IMG);
+    Entity *player_ent = malloc(sizeof(Entity));
+
+    if (player_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
+
+    char *sprites[] = {MF_IDLE_IMG, MF_FLYING_IMG};
 
     player_ent->vel = PLAYER_VEL;
     player_ent->damage = PLAYER_DAMAGE;
     player_ent->health = PLAYER_HEALTH;
-    player_ent->type = ET_PLAYER;
+    player_ent->ent_type = ET_PLAYER;
 
+    player_ent->IsEntOutOfBounds = NULL;
     player_ent->RenderEntity = RenderEntityPlayer;
+
+    player_ent->box.x = PLAYER_X;
+    player_ent->box.y = PLAYER_Y;
+    player_ent->box.w = PLAYER_W;
+    player_ent->box.h = PLAYER_H;
+
+    player_ent->color.r = 0;
+    player_ent->color.g = 0;
+    player_ent->color.b = 0;
+    player_ent->color.a = 255;
+
+    player_ent->sprite_speed = 0;
+    player_ent->sprite_frames = MF_SPRITE_NUM - MF_SPRITE_IDLE;
+    player_ent->sprite_type = MF_SPRITE_IDLE;
+    memset(player_ent->textures, 0, sizeof(player_ent->textures));
+
+    for (Uint32 i = 0; i < player_ent->sprite_frames; i++)
+    {
+        player_ent->textures[i] = GetImageTexture(renderer, sprites[i]);
+    }
 
     return player_ent;
 }
 
 static void RenderEntityPlayer(Entity *player_ent, SDL_Renderer *renderer)
 {
-    SDL_RenderCopy(renderer, player_ent->texture, NULL, &player_ent->box);
+    SDL_RenderCopy(renderer, player_ent->textures[player_ent->sprite_type], NULL, &player_ent->box);
 }
 
 void AppendEntityPlayer(Entities *ents, Entity *player_ent)
@@ -130,7 +124,7 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
     bolt_ent->vel = bolt->vel;
     bolt_ent->damage = bolt->damage;
     bolt_ent->health = 0;
-    bolt_ent->type = type;
+    bolt_ent->ent_type = type;
 
     bolt_ent->IsEntOutOfBounds = IsBoltOutOfBounds;
     bolt_ent->RenderEntity = RenderEntityBolt;
@@ -145,7 +139,10 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
     bolt_ent->color.b = bolt->b;
     bolt_ent->color.a = bolt->a;
 
-    bolt_ent->texture = NULL;
+    bolt_ent->sprite_speed = 0;
+    bolt_ent->sprite_frames = 0;
+    bolt_ent->sprite_type = 0;
+    memset(bolt_ent->textures, 0, sizeof(bolt_ent->textures));
 
     return bolt_ent;
 }
@@ -200,24 +197,54 @@ Asteroid Entity
 */
 Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 {
-    int x = (rand() % (SCREEN_WIDTH - (ASTER_SIZE + PLAYER_HALF_W))) + PLAYER_QTR_W;
-    const char *aster_img = (rand() % 4) ? ASTER_GRAY_IMG : ASTER_BROWN_IMG;
-    Entity *aster_ent = InitTextureEntity(x, -ASTER_SIZE, ASTER_SIZE, ASTER_SIZE, renderer, aster_img);
+    Entity *aster_ent = malloc(sizeof(Entity));
+
+    if (aster_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
+
+    bool is_aster_gray = (bool)rand_int(0, 3);
+    char *sprites_gray[] = {ASTER_GRAY_1_IMG, ASTER_GRAY_2_IMG, ASTER_GRAY_3_IMG, ASTER_GRAY_4_IMG};
+    char *sprites_brown[] = {ASTER_BROWN_1_IMG, ASTER_BROWN_2_IMG, ASTER_BROWN_3_IMG, ASTER_BROWN_4_IMG};
+    const char *current_sprite = "";
 
     aster_ent->vel = ASTER_VEL;
     aster_ent->damage = ASTER_DAMAGE;
     aster_ent->health = ASTER_HEALTH;
-    aster_ent->type = ET_ASTER;
+    aster_ent->ent_type = ET_ASTER;
 
     aster_ent->IsEntOutOfBounds = IsAsterOutOfBounds;
     aster_ent->RenderEntity = RenderEntityAster;
+
+    aster_ent->box.w = rand_int(ASTER_MIN_SIZE, ASTER_MAX_SIZE);
+    aster_ent->box.h = aster_ent->box.w;
+    aster_ent->box.x = rand_int(0, (SCREEN_WIDTH - (aster_ent->box.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
+    aster_ent->box.y = -aster_ent->box.h;
+
+    aster_ent->color.r = 0;
+    aster_ent->color.g = 0;
+    aster_ent->color.b = 0;
+    aster_ent->color.a = 255;
+
+    aster_ent->sprite_speed = (Uint32)(rand_int(0, 30) + 140);
+    aster_ent->sprite_frames = (ASTER_SPRITE_NUM - ASTER_SPRITE_1);
+    aster_ent->sprite_type = ASTER_SPRITE_1;
+    memset(aster_ent->textures, 0, sizeof(aster_ent->textures));
+
+    for (Uint32 i = 0; i < aster_ent->sprite_frames; i++)
+    {
+        current_sprite = (is_aster_gray) ? sprites_gray[i] : sprites_brown[i];
+        aster_ent->textures[i] = GetImageTexture(renderer, current_sprite);
+    } 
 
     return aster_ent;
 }
 
 static bool IsAsterOutOfBounds(Entity *aster_ent)
 {
-    if ((aster_ent->box.y + (aster_ent->box.h/3)) >= SCREEN_HEIGHT)
+    if ((aster_ent->box.y + (aster_ent->box.h / 4)) >= SCREEN_HEIGHT)
     {
         return true;
     }
@@ -225,10 +252,16 @@ static bool IsAsterOutOfBounds(Entity *aster_ent)
     return false;
 }
 
+static SpriteType GetAsterSprite(Entity *aster_ent)
+{
+    return (SpriteType)((SDL_GetTicks() / aster_ent->sprite_speed)
+                            % aster_ent->sprite_frames);
+}
+
 static void RenderEntityAster(Entity *aster_ent, SDL_Renderer *renderer)
 {
     aster_ent->box.y += aster_ent->vel;
-    SDL_RenderCopy(renderer, aster_ent->texture, NULL, &aster_ent->box);
+    SDL_RenderCopy(renderer, aster_ent->textures[GetAsterSprite(aster_ent)], NULL, &aster_ent->box);
 }
 
 void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
@@ -258,12 +291,12 @@ Entity *InitPowerUpEntity(void)
     power_up_ent->vel = PW_VEL;
     power_up_ent->damage = 0;
     power_up_ent->health = 0;
-    power_up_ent->type = ET_POWERUP;
+    power_up_ent->ent_type = ET_POWERUP;
 
     power_up_ent->IsEntOutOfBounds = IsPowerUpOutOfBounds;
     power_up_ent->RenderEntity = RenderEntityPowerUp;
 
-    power_up_ent->box.x = rand() % (SCREEN_WIDTH - PW_WIDTH);
+    power_up_ent->box.x = rand_int(0, SCREEN_WIDTH - PW_WIDTH);
     power_up_ent->box.y = -PW_HEIGHT;
     power_up_ent->box.w = PW_WIDTH;
     power_up_ent->box.h = PW_HEIGHT;
@@ -271,7 +304,10 @@ Entity *InitPowerUpEntity(void)
     SetRGBPowerUp(power_up_ent);
     power_up_ent->color.a = 255;
 
-    power_up_ent->texture = NULL;
+    power_up_ent->sprite_speed = 0;
+    power_up_ent->sprite_frames = 0;
+    power_up_ent->sprite_type = 0;
+    memset(power_up_ent->textures, 0, sizeof(power_up_ent->textures));
 
     return power_up_ent;
 }
@@ -288,9 +324,9 @@ static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
 
 static void SetRGBPowerUp(Entity *power_up_ent)
 {
-    power_up_ent->color.r = (Uint8)(rand() % 256);
-    power_up_ent->color.g = (Uint8)(rand() % 256);
-    power_up_ent->color.b = (Uint8)(rand() % 256);
+    power_up_ent->color.r = (Uint8)(rand_int(0, 255));
+    power_up_ent->color.g = (Uint8)(rand_int(0, 255));
+    power_up_ent->color.b = (Uint8)(rand_int(0, 255));
 }
 
 static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
@@ -323,7 +359,14 @@ Entities
 */
 static void FreeEntity(Entities *ents, int index)
 {
-    SDL_DestroyTexture(ents->elems[index]->texture);
+    int i = 0;
+
+    while (ents->elems[index]->textures[i] != NULL)
+    {
+        SDL_DestroyTexture(ents->elems[index]->textures[i]);
+        i++;
+    }
+
     free(ents->elems[index]);
 }
 
@@ -440,8 +483,8 @@ EntityCollision DetectEntityCollision(Entities *ents)
             if (ents->elems[i] != ents->elems[j]
                 && SDL_HasIntersection(&ents->elems[i]->box, &ents->elems[j]->box))
             {
-                ec.sender = ents->elems[i]->type;
-                ec.receiver = ents->elems[j]->type;
+                ec.sender = ents->elems[i]->ent_type;
+                ec.receiver = ents->elems[j]->ent_type;
         
                 if (!(DidPlayerSendersHitAster(ec.sender, ec.receiver)
                     || DidPlayerHitPowerUp(ec.sender, ec.receiver)))

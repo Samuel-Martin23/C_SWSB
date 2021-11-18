@@ -1,5 +1,16 @@
 #include "../include/SWSB_assets.h"
 
+int rand_int(int min, int max)
+{
+    if (min > max)
+    {
+        return 0;
+    }
+
+    int range = (max - min) + 1;
+    return (rand() % range) + min;
+}
+
 SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path)
 {
     SDL_Texture *image_texuare = NULL;

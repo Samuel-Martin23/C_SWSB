@@ -20,11 +20,13 @@
 #define BACKGROUND_IMG      "../assets/star_background.png"
 #define BACKGROUND_VEL      2
 
-#define MF_IMG              "../assets/millennium_falcon.png"            
-#define PLAYER_X            ((SCREEN_WIDTH / 2) - (PLAYER_W / 2))
-#define PLAYER_Y            (SCREEN_HEIGHT - PLAYER_H)
+#define MF_IDLE_IMG         "../assets/mf_idle.png"    
+#define MF_FLYING_IMG       "../assets/mf_flying.png"
+
 #define PLAYER_W            100
 #define PLAYER_H            100
+#define PLAYER_X            ((SCREEN_WIDTH / 2) - (PLAYER_W / 2))
+#define PLAYER_Y            ((SCREEN_HEIGHT - PLAYER_H) - (PLAYER_H / 10))
 #define PLAYER_HALF_W       (PLAYER_W / 2)   
 #define PLAYER_QTR_W        (PLAYER_W / 4)
 #define PLAYER_VEL          (6 + BACKGROUND_VEL)
@@ -32,14 +34,22 @@
 #define PLAYER_HEALTH       100
 #define PLAYER_FT           225
 
-#define ASTER_GRAY_IMG      "../assets/asteroid_gray.png"
-#define ASTER_BROWN_IMG     "../assets/asteroid_brown.png"
-#define ASTER_SIZE          50
+#define ASTER_GRAY_1_IMG    "../assets/asteroid_gray_1.png"
+#define ASTER_GRAY_2_IMG    "../assets/asteroid_gray_2.png"
+#define ASTER_GRAY_3_IMG    "../assets/asteroid_gray_3.png"
+#define ASTER_GRAY_4_IMG    "../assets/asteroid_gray_4.png"
+#define ASTER_BROWN_1_IMG   "../assets/asteroid_brown_1.png"
+#define ASTER_BROWN_2_IMG   "../assets/asteroid_brown_2.png"
+#define ASTER_BROWN_3_IMG   "../assets/asteroid_brown_3.png"
+#define ASTER_BROWN_4_IMG   "../assets/asteroid_brown_4.png"
+
+#define ASTER_MIN_SIZE      50
+#define ASTER_MAX_SIZE      60
 #define ASTER_VEL           (1 + BACKGROUND_VEL)
 #define ASTER_DAMAGE        100
 #define ASTER_HEALTH        30
 #define ASTER_IST           5000
-#define ASTER_CST           500
+#define ASTER_CST           450
 #define ASTER_POINTS        1000
 
 #define SHOT_VEL            (8 + BACKGROUND_VEL)
@@ -53,6 +63,7 @@
 
 #define PW_FAST             10000
 
+int rand_int(int min, int max);
 SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path);
 
 #endif /* SWSB_ASSETS_H */

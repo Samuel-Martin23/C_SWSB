@@ -64,10 +64,18 @@ void RunSWSB(void)
         if (handler.keyboard[SDL_SCANCODE_A] && player_ship->box.x > 0)
         {
             player_ship->box.x -= player_ship->vel; 
+            player_ship->sprite_type = MF_SPRITE_FLYING;
         }
+
         if (handler.keyboard[SDL_SCANCODE_D] && (player_ship->box.x + player_ship->box.w) < SCREEN_WIDTH)
         {
             player_ship->box.x += player_ship->vel;
+            player_ship->sprite_type = MF_SPRITE_FLYING;
+        }
+
+        if (!(handler.keyboard[SDL_SCANCODE_A]) && !(handler.keyboard[SDL_SCANCODE_D]))
+        {
+            player_ship->sprite_type = MF_SPRITE_IDLE;
         }
 
 
