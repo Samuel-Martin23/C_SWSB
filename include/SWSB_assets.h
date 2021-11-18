@@ -43,8 +43,8 @@
 #define ASTER_BROWN_3_IMG   "../assets/asteroid_brown_3.png"
 #define ASTER_BROWN_4_IMG   "../assets/asteroid_brown_4.png"
 
-#define ASTER_MIN_SIZE      50
-#define ASTER_MAX_SIZE      60
+#define ASTER_MIN_SIZE      40
+#define ASTER_MAX_SIZE      45
 #define ASTER_VEL           (1 + BACKGROUND_VEL)
 #define ASTER_DAMAGE        100
 #define ASTER_HEALTH        30
