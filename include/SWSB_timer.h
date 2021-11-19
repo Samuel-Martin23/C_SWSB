@@ -18,11 +18,11 @@ typedef struct
 } Timer;
 
 Timer InitTimer(void);
-void SetIterationTicks(Timer *t);
-void StartStopWatch(Timer *t);
-void PauseStopWatch(Timer *t);
-void ResumeStopWatch(Timer *t);
-Uint32 GetStopWatchTicks(Timer *t);
-void SetFrameRate(Timer *t);
+void SetIterationTicks(void);
+void StartStopWatch(void);
+void PauseStopWatch(void);
+void ResumeStopWatch(void);
+Uint32 GetStopWatchTicks(void);
+void SetFrameRate(void);
 
 #endif /* SWSB_TIMER_H */

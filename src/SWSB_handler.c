@@ -24,7 +24,6 @@ Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
     }
 
     handler.keyboard = SDL_GetKeyboardState(NULL);
-    handler.timer = InitTimer();
 
     memset(handler.is_key_pressed, 0, SDL_NUM_SCANCODES);
 

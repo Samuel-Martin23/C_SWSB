@@ -34,23 +34,23 @@
 #define PLAYER_HEALTH       100
 #define PLAYER_FT           225
 
-#define ASTER_GRAY_1_IMG    "../assets/asteroid_gray_1.png"
-#define ASTER_GRAY_2_IMG    "../assets/asteroid_gray_2.png"
-#define ASTER_GRAY_3_IMG    "../assets/asteroid_gray_3.png"
-#define ASTER_GRAY_4_IMG    "../assets/asteroid_gray_4.png"
-#define ASTER_BROWN_1_IMG   "../assets/asteroid_brown_1.png"
-#define ASTER_BROWN_2_IMG   "../assets/asteroid_brown_2.png"
-#define ASTER_BROWN_3_IMG   "../assets/asteroid_brown_3.png"
-#define ASTER_BROWN_4_IMG   "../assets/asteroid_brown_4.png"
-
+#define ASTER_GRAY_IMG_1    "../assets/asteroid_gray_1.png"
+#define ASTER_GRAY_IMG_2    "../assets/asteroid_gray_2.png"
+#define ASTER_GRAY_IMG_3    "../assets/asteroid_gray_3.png"
+#define ASTER_GRAY_IMG_4    "../assets/asteroid_gray_4.png"
+#define ASTER_BROWN_IMG_1   "../assets/asteroid_brown_1.png"
+#define ASTER_BROWN_IMG_2   "../assets/asteroid_brown_2.png"
+#define ASTER_BROWN_IMG_3   "../assets/asteroid_brown_3.png"
+#define ASTER_BROWN_IMG_4   "../assets/asteroid_brown_4.png"
 #define ASTER_MIN_SIZE      40
 #define ASTER_MAX_SIZE      45
 #define ASTER_VEL           (1 + BACKGROUND_VEL)
 #define ASTER_DAMAGE        100
 #define ASTER_HEALTH        30
 #define ASTER_IST           5000
-#define ASTER_CST           450
+#define ASTER_CST           550
 #define ASTER_POINTS        1000
+#define ASTER_SS            120
 
 #define SHOT_VEL            (8 + BACKGROUND_VEL)
 #define SHOT_DAMAGE         10
@@ -62,6 +62,17 @@
 #define PW_CST              (PW_IST * 10)
 
 #define PW_FAST             10000
+
+#define EXPLO_IMG_1         "../assets/explo_1.png"
+#define EXPLO_IMG_2         "../assets/explo_2.png"
+#define EXPLO_IMG_3         "../assets/explo_3.png"
+#define EXPLO_IMG_4         "../assets/explo_4.png"
+#define EXPLO_IMG_5         "../assets/explo_5.png"
+#define EXPLO_IMG_6         "../assets/explo_6.png"
+#define EXPLO_IMG_7         "../assets/explo_7.png"
+#define EXPLO_IMG_8         "../assets/explo_8.png"
+#define EXPLO_VEL           (BACKGROUND_VEL)
+#define EXPLO_SS            75
 
 int rand_int(int min, int max);
 SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path);

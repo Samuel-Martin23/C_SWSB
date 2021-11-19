@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include "SWSB_assets.h"
+#include "SWSB_timer.h"
 
 #define PLAYER_ENT      0
 #define MAX_ENTS        1024
@@ -16,7 +17,8 @@ typedef enum
     ET_PLAYER,
     ET_PLAYER_BOLT,
     ET_ASTER,
-    ET_POWERUP
+    ET_POWERUP,
+    ET_EXPLO
 } EntityType;
 
 typedef enum
@@ -32,7 +34,19 @@ typedef enum
     ASTER_SPRITE_3,
     ASTER_SPRITE_4,
 
-    ASTER_SPRITE_NUM
+    ASTER_SPRITE_NUM,
+
+
+    EXPLO_SPRITE_1,
+    EXPLO_SPRITE_2,
+    EXPLO_SPRITE_3,
+    EXPLO_SPRITE_4,
+    EXPLO_SPRITE_5,
+    EXPLO_SPRITE_6,
+    EXPLO_SPRITE_7,
+    EXPLO_SPRITE_8,
+
+    EXPLO_SPRITE_NUM
 } SpriteType;
 
 typedef struct Entity
@@ -51,6 +65,7 @@ typedef struct Entity
     Uint32 sprite_speed;
     Uint32 sprite_frames;
     SpriteType sprite_type;
+    Uint32 next_sprite;
     SDL_Texture *textures[MAX_TEXTURES];
 } Entity;
 
@@ -121,6 +136,15 @@ void AppendEntityPowerUp(Entities *ents);
 
 /*
 ==============
+Explosion Entity
+==============
+*/
+Entity *InitExploEntity(SDL_Rect *ent_rect, SDL_Renderer *renderer);
+void AppendEntityExplo(Entities *ents, Entity *explo_ent);
+
+
+/*
+==============
 Entities
 ==============
 */
@@ -132,6 +156,5 @@ void FreeEntities(Entities *ents);
 Entity Collision
 ==============
 */
-EntityCollision DetectEntityCollision(Entities *ents);
-
+EntityCollision DetectEntityCollision(Entities *ents, SDL_Renderer *renderer);
 #endif /* SWSB_ENT_H */

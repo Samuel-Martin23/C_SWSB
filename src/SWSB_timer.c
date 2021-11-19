@@ -1,60 +1,56 @@
 #include "../include/SWSB_timer.h"
 
-Timer InitTimer(void)
+Timer timer = {0, 0, 0, false, false};
+
+void SetIterationTicks(void)
 {
-    Timer t = {0, 0, 0, false, false};
-    return t;
+    timer.iteration_ticks = SDL_GetTicks();
 }
 
-void SetIterationTicks(Timer *t)
+void StartStopWatch(void)
 {
-    t->iteration_ticks = SDL_GetTicks();
+    timer.is_started = true;
+    timer.start_ticks = SDL_GetTicks();
 }
 
-void StartStopWatch(Timer *t)
+void PauseStopWatch(void)
 {
-    t->is_started = true;
-    t->start_ticks = SDL_GetTicks();
-}
-
-void PauseStopWatch(Timer *t)
-{
-    if (t->is_started && !t->is_paused)
+    if (timer.is_started && !(timer.is_paused))
     {
-        t->is_paused = true;
-        t->paused_ticks = SDL_GetTicks() - t->start_ticks;
+        timer.is_paused = true;
+        timer.paused_ticks = SDL_GetTicks() - timer.start_ticks;
     }
 }
 
-void ResumeStopWatch(Timer *t)
+void ResumeStopWatch(void)
 {
-    if (t->is_started && t->is_paused)
+    if (timer.is_started && timer.is_paused)
     {
-        t->is_paused = false;
-        t->start_ticks = SDL_GetTicks() - t->paused_ticks;
+        timer.is_paused = false;
+        timer.start_ticks = SDL_GetTicks() - timer.paused_ticks;
     }
 }
 
-Uint32 GetStopWatchTicks(Timer *t)
+Uint32 GetStopWatchTicks(void)
 {
     Uint32 time = 0;
 
-    if (t->is_started)
+    if (timer.is_started)
     {
-        if (t->is_paused)
+        if (timer.is_paused)
         {
-            time = t->paused_ticks;
+            time = timer.paused_ticks;
         }
         else
         {
-            time = SDL_GetTicks() - t->start_ticks;
+            time = SDL_GetTicks() - timer.start_ticks;
         }
     }
 
     return time;
 }
 
-void SetFrameRate(Timer *t)
+void SetFrameRate(void)
 {
     // We don't want to use GetStopWatchTicks here. If we didn't have a "pause game" feature,
     // then we could, but let me explain why we can't. If you call PauseStopWatch
@@ -67,8 +63,8 @@ void SetFrameRate(Timer *t)
     // actually passed in the while loop.
     // For setting the frame rate, we want to know the amount of time
     // it took to complete one iteration in the while loop.
-    if (SCREEN_TICKS_PER_FRAME > (SDL_GetTicks() - t->iteration_ticks))
+    if (SCREEN_TICKS_PER_FRAME > (SDL_GetTicks() - timer.iteration_ticks))
     {
-        SDL_Delay(SCREEN_TICKS_PER_FRAME - (SDL_GetTicks() - t->iteration_ticks));
+        SDL_Delay(SCREEN_TICKS_PER_FRAME - (SDL_GetTicks() - timer.iteration_ticks));
     }
 }

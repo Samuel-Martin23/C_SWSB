@@ -38,6 +38,15 @@ static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer);
 
 /*
 ==============
+Explosion Entity
+==============
+*/
+static bool IsExploOutOfBounds(Entity *explo_ent);
+static void RenderEntityExplo(Entity *explo_ent, SDL_Renderer *renderer);
+
+
+/*
+==============
 Entities
 ==============
 */
@@ -82,6 +91,8 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
     player_ent->sprite_speed = 0;
     player_ent->sprite_frames = MF_SPRITE_NUM - MF_SPRITE_IDLE;
     player_ent->sprite_type = MF_SPRITE_IDLE;
+    player_ent->next_sprite = 0;
+
     memset(player_ent->textures, 0, sizeof(player_ent->textures));
 
     for (Uint32 i = 0; i < player_ent->sprite_frames; i++)
@@ -142,6 +153,8 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
     bolt_ent->sprite_speed = 0;
     bolt_ent->sprite_frames = 0;
     bolt_ent->sprite_type = 0;
+    bolt_ent->next_sprite = 0;
+
     memset(bolt_ent->textures, 0, sizeof(bolt_ent->textures));
 
     return bolt_ent;
@@ -206,8 +219,8 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
     }
 
     bool is_aster_gray = (bool)rand_int(0, 3);
-    char *sprites_gray[] = {ASTER_GRAY_1_IMG, ASTER_GRAY_2_IMG, ASTER_GRAY_3_IMG, ASTER_GRAY_4_IMG};
-    char *sprites_brown[] = {ASTER_BROWN_1_IMG, ASTER_BROWN_2_IMG, ASTER_BROWN_3_IMG, ASTER_BROWN_4_IMG};
+    char *sprites_gray[] = {ASTER_GRAY_IMG_1, ASTER_GRAY_IMG_2, ASTER_GRAY_IMG_3, ASTER_GRAY_IMG_4};
+    char *sprites_brown[] = {ASTER_BROWN_IMG_1, ASTER_BROWN_IMG_2, ASTER_BROWN_IMG_3, ASTER_BROWN_IMG_4};
     const char *current_sprite = "";
 
     aster_ent->vel = ASTER_VEL;
@@ -228,9 +241,11 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
     aster_ent->color.b = 0;
     aster_ent->color.a = 255;
 
-    aster_ent->sprite_speed = (Uint32)(rand_int(0, 30) + 140);
+    aster_ent->sprite_speed = (Uint32)(rand_int(0, 10) + ASTER_SS);
     aster_ent->sprite_frames = (ASTER_SPRITE_NUM - ASTER_SPRITE_1);
-    aster_ent->sprite_type = ASTER_SPRITE_1;
+    aster_ent->sprite_type = (SpriteType)rand_int(ASTER_SPRITE_1, ASTER_SPRITE_4);
+    aster_ent->next_sprite = 0;
+
     memset(aster_ent->textures, 0, sizeof(aster_ent->textures));
 
     for (Uint32 i = 0; i < aster_ent->sprite_frames; i++)
@@ -254,8 +269,20 @@ static bool IsAsterOutOfBounds(Entity *aster_ent)
 
 static SpriteType GetAsterSprite(Entity *aster_ent)
 {
-    return (SpriteType)((SDL_GetTicks() / aster_ent->sprite_speed)
-                            % aster_ent->sprite_frames);
+    if (aster_ent->sprite_type == ASTER_SPRITE_NUM)
+    {
+        aster_ent->sprite_type = ASTER_SPRITE_1;
+    }
+
+    SpriteType curr_sprite = aster_ent->sprite_type;
+
+    if (GetStopWatchTicks() > aster_ent->next_sprite)
+    {
+        aster_ent->sprite_type++;
+        aster_ent->next_sprite = aster_ent->sprite_speed + GetStopWatchTicks();
+    }
+
+    return (curr_sprite - ASTER_SPRITE_1);
 }
 
 static void RenderEntityAster(Entity *aster_ent, SDL_Renderer *renderer)
@@ -307,6 +334,8 @@ Entity *InitPowerUpEntity(void)
     power_up_ent->sprite_speed = 0;
     power_up_ent->sprite_frames = 0;
     power_up_ent->sprite_type = 0;
+    power_up_ent->next_sprite = 0;
+
     memset(power_up_ent->textures, 0, sizeof(power_up_ent->textures));
 
     return power_up_ent;
@@ -320,13 +349,6 @@ static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
     }
 
     return true;
-}
-
-static void SetRGBPowerUp(Entity *power_up_ent)
-{
-    power_up_ent->color.r = (Uint8)(rand_int(0, 255));
-    power_up_ent->color.g = (Uint8)(rand_int(0, 255));
-    power_up_ent->color.b = (Uint8)(rand_int(0, 255));
 }
 
 static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
@@ -343,11 +365,104 @@ static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
     SDL_RenderFillRect(renderer, &power_up_ent->box);
 }
 
+static void SetRGBPowerUp(Entity *power_up_ent)
+{
+    power_up_ent->color.r = (Uint8)(rand_int(10, 255));
+    power_up_ent->color.g = (Uint8)(rand_int(10, 255));
+    power_up_ent->color.b = (Uint8)(rand_int(10, 255));
+}
+
 void AppendEntityPowerUp(Entities *ents)
 {
     if (!(IsEntitiesFull(ents)))
     {
         ents->elems[ents->size++] = InitPowerUpEntity();
+    }
+}
+
+
+/*
+==============
+Explosion Entity
+==============
+*/
+Entity *InitExploEntity(SDL_Rect *ent_rect, SDL_Renderer *renderer)
+{
+    Entity *explo_ent = malloc(sizeof(Entity));
+
+    if (explo_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
+
+    char *sprites[] = {EXPLO_IMG_1, EXPLO_IMG_2, EXPLO_IMG_3, EXPLO_IMG_4,
+                        EXPLO_IMG_5, EXPLO_IMG_6, EXPLO_IMG_7, EXPLO_IMG_8};
+
+    explo_ent->vel = EXPLO_VEL;
+    explo_ent->damage = 0;
+    explo_ent->health = 0;
+    explo_ent->ent_type = ET_EXPLO;
+
+    explo_ent->IsEntOutOfBounds = IsExploOutOfBounds;
+    explo_ent->RenderEntity = RenderEntityExplo;
+
+    explo_ent->box = *ent_rect;
+
+    explo_ent->color.r = 0;
+    explo_ent->color.g = 0;
+    explo_ent->color.b = 0;
+    explo_ent->color.a = 255;
+
+    explo_ent->sprite_speed = EXPLO_SS;
+    explo_ent->sprite_frames = (EXPLO_SPRITE_NUM - EXPLO_SPRITE_1);
+    explo_ent->sprite_type = EXPLO_SPRITE_1;
+    explo_ent->next_sprite = explo_ent->sprite_speed + GetStopWatchTicks();
+
+    memset(explo_ent->textures, 0, sizeof(explo_ent->textures));
+
+    for (Uint32 i = 0; i < explo_ent->sprite_frames; i++)
+    {
+        explo_ent->textures[i] = GetImageTexture(renderer, sprites[i]);
+    }
+
+    return explo_ent;
+}
+
+static bool IsExploOutOfBounds(Entity *explo_ent)
+{
+    if (explo_ent->sprite_type == EXPLO_SPRITE_NUM)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+static SpriteType GetExploSprite(Entity *explo_ent)
+{
+    SpriteType curr_sprite = explo_ent->sprite_type;
+
+    if (GetStopWatchTicks() > explo_ent->next_sprite)
+    {
+        explo_ent->sprite_type++;
+        explo_ent->next_sprite = explo_ent->sprite_speed + GetStopWatchTicks();
+    }
+
+    return (curr_sprite - EXPLO_SPRITE_1);
+}
+
+static void RenderEntityExplo(Entity *explo_ent, SDL_Renderer *renderer)
+{
+    explo_ent->box.y += explo_ent->vel;
+    SDL_RenderCopy(renderer, explo_ent->textures[GetExploSprite(explo_ent)], NULL, &explo_ent->box);
+}
+
+void AppendEntityExplo(Entities *ents, Entity *explo_ent)
+{
+    if (!(IsEntitiesFull(ents)))
+    {
+        ents->elems[ents->size++] = explo_ent;
     }
 }
 
@@ -394,17 +509,15 @@ static bool IsEntitiesFull(Entities *ents)
 
 void RenderEntities(Entities *ents, SDL_Renderer *renderer)
 {
-    int i = 1;
-    Entity *curr_ent = ents->elems[PLAYER_ENT];
-
-    // The first index is the player.
-    curr_ent->RenderEntity(curr_ent, renderer);
+    int i = PLAYER_ENT;
+    Entity *curr_ent = NULL;
 
     while (i < ents->size)
     {
         curr_ent = ents->elems[i];
 
-        if (curr_ent->IsEntOutOfBounds(curr_ent))
+        // Some Entities might not have an out of bounds function.
+        if (curr_ent->IsEntOutOfBounds && curr_ent->IsEntOutOfBounds(curr_ent))
         {
             RemoveEntityFromArray(ents, i);
             continue;
@@ -472,7 +585,7 @@ static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
     return ((sender == ET_PLAYER || sender == ET_PLAYER_BOLT) && receiver == ET_ASTER);
 }
 
-EntityCollision DetectEntityCollision(Entities *ents)
+EntityCollision DetectEntityCollision(Entities *ents, SDL_Renderer *renderer)
 {
     EntityCollision ec = {ET_NONE, ET_NONE, false, false};
 
@@ -504,6 +617,14 @@ EntityCollision DetectEntityCollision(Entities *ents)
 
                 if (ec.is_receiver_destroyed)
                 {
+                    // If the receiver was destroyed and
+                    // it was an asteroid then play an
+                    // explosion effect.
+                    if (ec.receiver == ET_ASTER)
+                    {
+                        AppendEntityExplo(ents, InitExploEntity(&ents->elems[j]->box, renderer));
+                    }
+
                     RemoveEntityFromArray(ents, j);
                 }
 

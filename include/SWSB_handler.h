@@ -4,11 +4,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
-#include "SWSB_timer.h"
 
 typedef struct
 {
-    Timer timer;
     SDL_Event event;
     SDL_Window *window;
     SDL_Renderer *wrenderer;

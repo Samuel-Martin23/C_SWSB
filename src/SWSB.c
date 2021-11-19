@@ -23,11 +23,11 @@ void RunSWSB(void)
 
 
     AppendEntityPlayer(&total_ents, player_ship);
-    StartStopWatch(&handler.timer);
+    StartStopWatch();
 
     while (true)
     {
-        SetIterationTicks(&handler.timer);
+        SetIterationTicks();
 
         /*
         ==============
@@ -45,13 +45,13 @@ void RunSWSB(void)
 
         if (!(total_ents.elems[PLAYER_ENT]->health) || is_paused)
         {
-            PauseStopWatch(&handler.timer);
+            PauseStopWatch();
             continue;
         }
 
-        ResumeStopWatch(&handler.timer);
+        ResumeStopWatch();
 
-        current_ticks = GetStopWatchTicks(&handler.timer);
+        current_ticks = GetStopWatchTicks();
 
         /*
         ==============
@@ -84,8 +84,9 @@ void RunSWSB(void)
         Add new Entities.
         ==============
         */
-        ec = DetectEntityCollision(&total_ents);
+        ec = DetectEntityCollision(&total_ents, handler.wrenderer);
 
+        // If we got a powerup.
         if (!(ec.is_sender_destroyed) && ec.is_receiver_destroyed
             && ec.sender == ET_PLAYER && ec.receiver == ET_POWERUP)
         {
@@ -93,11 +94,14 @@ void RunSWSB(void)
             powerup_expired = current_ticks + PW_FAST;
         }
 
+        // If our power up is expired, set it back
+        // to a default shot.
         if (current_ticks > powerup_expired)
         {
             SetBoltComponent(&bolt, 2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255);
         }
 
+        // If the user fires, spawn a new bolt.
         if (handler.keyboard[SDL_SCANCODE_SPACE]
             && current_ticks > player_next_shot)
         {
@@ -105,12 +109,14 @@ void RunSWSB(void)
             player_next_shot = current_ticks + PLAYER_FT;
         }
 
+        // If our time is up, spawn a new asteroid.
         if (current_ticks > aster_next_spawn)
         {
             AppendEntityAster(&total_ents, handler.wrenderer);
             aster_next_spawn = current_ticks + ASTER_CST;
         }
 
+        // If our time is up, spawn a new power up.
         if (current_ticks > powerup_next_spawn)
         {
             AppendEntityPowerUp(&total_ents);
@@ -147,7 +153,7 @@ void RunSWSB(void)
 
         current_score = 0;
 
-        SetFrameRate(&handler.timer);
+        SetFrameRate();
     }
 
     FreeScreenText(&game_score);
