@@ -351,6 +351,13 @@ static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
     return true;
 }
 
+static void SetRGBPowerUp(Entity *power_up_ent)
+{
+    power_up_ent->color.r = (Uint8)(rand_int(10, 255));
+    power_up_ent->color.g = (Uint8)(rand_int(10, 255));
+    power_up_ent->color.b = (Uint8)(rand_int(10, 255));
+}
+
 static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
 {
     power_up_ent->box.y += power_up_ent->vel;
@@ -363,13 +370,6 @@ static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
     SDL_SetRenderDrawColor(renderer, power_up_ent->color.r, power_up_ent->color.g,
                             power_up_ent->color.b, power_up_ent->color.a);
     SDL_RenderFillRect(renderer, &power_up_ent->box);
-}
-
-static void SetRGBPowerUp(Entity *power_up_ent)
-{
-    power_up_ent->color.r = (Uint8)(rand_int(10, 255));
-    power_up_ent->color.g = (Uint8)(rand_int(10, 255));
-    power_up_ent->color.b = (Uint8)(rand_int(10, 255));
 }
 
 void AppendEntityPowerUp(Entities *ents)
