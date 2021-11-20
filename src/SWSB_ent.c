@@ -47,6 +47,15 @@ static void RenderEntityExplo(Entity *explo_ent, SDL_Renderer *renderer);
 
 /*
 ==============
+Enemy Ship Entity
+==============
+*/
+static bool IsEnemyShipOutOfBounds(Entity *enemy_ship_ent);
+static void RenderEnemyShip(Entity *enemy_ship_ent, SDL_Renderer *renderer);
+
+
+/*
+==============
 Entities
 ==============
 */
@@ -73,6 +82,7 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
     player_ent->vel = PLAYER_VEL;
     player_ent->damage = PLAYER_DAMAGE;
     player_ent->health = PLAYER_HEALTH;
+    player_ent->next_bolt = 0;
     player_ent->ent_type = ET_PLAYER;
 
     player_ent->IsEntOutOfBounds = NULL;
@@ -135,6 +145,7 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
     bolt_ent->vel = bolt->vel;
     bolt_ent->damage = bolt->damage;
     bolt_ent->health = 0;
+    bolt_ent->next_bolt = 0;
     bolt_ent->ent_type = type;
 
     bolt_ent->IsEntOutOfBounds = IsBoltOutOfBounds;
@@ -178,14 +189,13 @@ static void RenderEntityBolt(Entity *bolt_ent, SDL_Renderer *renderer)
     SDL_RenderFillRect(renderer, &bolt_ent->box);
 }
 
-void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *player_box)
+void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *ship_box)
 {
     if (!(IsEntitiesFull(ents)))
     {
-        ents->elems[ents->size] = bolt_ent;
-        ents->elems[ents->size]->box.x = player_box->x + (player_box->w / 2);
-        ents->elems[ents->size]->box.y = player_box->y - ents->elems[ents->size]->box.h;
-        ents->size++;
+        bolt_ent->box.x = ship_box->x + (ship_box->w / 2);
+        bolt_ent->box.y = ship_box->y - bolt_ent->box.h;
+        ents->elems[ents->size++] = bolt_ent;
     }
 }
 
@@ -226,6 +236,7 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
     aster_ent->vel = ASTER_VEL;
     aster_ent->damage = ASTER_DAMAGE;
     aster_ent->health = ASTER_HEALTH;
+    aster_ent->next_bolt = 0;
     aster_ent->ent_type = ET_ASTER;
 
     aster_ent->IsEntOutOfBounds = IsAsterOutOfBounds;
@@ -318,6 +329,7 @@ Entity *InitPowerUpEntity(void)
     power_up_ent->vel = PW_VEL;
     power_up_ent->damage = 0;
     power_up_ent->health = 0;
+    power_up_ent->next_bolt = 0;
     power_up_ent->ent_type = ET_POWERUP;
 
     power_up_ent->IsEntOutOfBounds = IsPowerUpOutOfBounds;
@@ -402,6 +414,7 @@ Entity *InitExploEntity(SDL_Rect *ent_rect, SDL_Renderer *renderer)
     explo_ent->vel = EXPLO_VEL;
     explo_ent->damage = 0;
     explo_ent->health = 0;
+    explo_ent->next_bolt = 0;
     explo_ent->ent_type = ET_EXPLO;
 
     explo_ent->IsEntOutOfBounds = IsExploOutOfBounds;
@@ -463,6 +476,91 @@ void AppendEntityExplo(Entities *ents, Entity *explo_ent)
     if (!(IsEntitiesFull(ents)))
     {
         ents->elems[ents->size++] = explo_ent;
+    }
+}
+
+
+/*
+==============
+Enemy Ship Entity
+==============
+*/
+Entity *InitEnemyShipEntity(SDL_Renderer *renderer)
+{
+    Entity *enemy_ship_ent = malloc(sizeof(Entity));
+
+    if (enemy_ship_ent == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(1);
+    }
+
+    enemy_ship_ent->vel = TF_VEL;
+    enemy_ship_ent->damage = TF_DAMAGE;
+    enemy_ship_ent->health = TF_HEALTH;
+    enemy_ship_ent->next_bolt = 0;
+    enemy_ship_ent->ent_type = ET_ENEMY_SHIP;
+
+    enemy_ship_ent->IsEntOutOfBounds = IsEnemyShipOutOfBounds;
+    enemy_ship_ent->RenderEntity = RenderEnemyShip;
+
+    enemy_ship_ent->box.w = TF_W;
+    enemy_ship_ent->box.h = TF_H;
+    enemy_ship_ent->box.x = rand_int(0, (SCREEN_WIDTH - (enemy_ship_ent->box.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
+    enemy_ship_ent->box.y = -enemy_ship_ent->box.h;
+
+    enemy_ship_ent->color.r = 0;
+    enemy_ship_ent->color.g = 0;
+    enemy_ship_ent->color.b = 0;
+    enemy_ship_ent->color.a = 255;
+
+    enemy_ship_ent->tracer.x = enemy_ship_ent->box.x;
+    enemy_ship_ent->tracer.y = 0;
+    enemy_ship_ent->tracer.w = enemy_ship_ent->box.w;
+    enemy_ship_ent->tracer.h = SCREEN_HEIGHT;
+
+    enemy_ship_ent->sprite_speed = 0;
+    enemy_ship_ent->sprite_frames = (TF_SPRITE_NUM - TF_SPRITE_IDLE);
+    enemy_ship_ent->sprite_type = TF_SPRITE_IDLE;
+    enemy_ship_ent->next_sprite = 0;
+
+    memset(enemy_ship_ent->textures, 0, sizeof(enemy_ship_ent->textures));
+
+    for (Uint32 i = 0; i < enemy_ship_ent->sprite_frames; i++)
+    {
+        enemy_ship_ent->textures[i] = GetImageTexture(renderer, TF_IDLE_IMG);
+    }
+
+    return enemy_ship_ent;
+}
+
+static bool IsEnemyShipOutOfBounds(Entity *enemy_ship_ent)
+{
+    if ((enemy_ship_ent->box.y + (enemy_ship_ent->box.h / 3)) >= SCREEN_HEIGHT)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+static void RenderEnemyShip(Entity *enemy_ship_ent, SDL_Renderer *renderer)
+{
+    enemy_ship_ent->box.y += enemy_ship_ent->vel;
+    SDL_RenderCopy(renderer, enemy_ship_ent->textures[0], NULL, &enemy_ship_ent->box);
+
+    enemy_ship_ent->tracer.y = enemy_ship_ent->box.y + enemy_ship_ent->box.h;
+    enemy_ship_ent->tracer.h = (SCREEN_HEIGHT - enemy_ship_ent->tracer.y);
+
+    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    // SDL_RenderFillRect(renderer, &enemy_ship_ent->tracer);
+}
+
+void AppendEntityEnemyShip(Entities *ents, SDL_Renderer *renderer)
+{
+    if (!(IsEntitiesFull(ents)))
+    {
+        ents->elems[ents->size++] = InitEnemyShipEntity(renderer);
     }
 }
 
@@ -539,18 +637,107 @@ void FreeEntities(Entities *ents)
 
 /*
 ==============
-Entity Collision
+Entity Interaction
 ==============
 */
-static void SetEmptyEntityCollision(EntityCollision *ec)
+static bool DidEnemyShipsDetectPlayer(EntityType sender, EntityType receiver)
 {
-    ec->sender = ET_NONE;
-    ec->receiver = ET_NONE;
-    ec->is_sender_destroyed = false;
-    ec->is_receiver_destroyed = false;
+    return (sender == ET_ENEMY_SHIP && receiver == ET_PLAYER);
 }
 
-static bool DoEntityDamages(Entities *ents, int sender, int receiver)
+void EntityEnemyDetection(Entities *ents)
+{
+    EntityType sender = ET_NONE;
+    EntityType receiver = ents->elems[PLAYER_ENT]->ent_type;
+    BoltComponent bolt = {2, 20, -TF_BOLT_VEL, TF_BOLT_DAMAGE, 0, 255, 0, 255};
+    SDL_Rect curr_tracer = {0, 0, 0, 0};
+
+    for (int j = 1; j < ents->size; j++)
+    {
+        sender = ents->elems[j]->ent_type;
+
+        if (SDL_HasIntersection(&ents->elems[j]->tracer, &ents->elems[PLAYER_ENT]->box))
+        {
+            if (DidEnemyShipsDetectPlayer(sender, receiver) && GetStopWatchTicks() > ents->elems[j]->next_bolt)
+            {
+                curr_tracer = ents->elems[j]->tracer;
+
+                curr_tracer.x -= 6;
+                AppendEntityBolt(ents, InitBoltEntity(&bolt, ET_ENEMY_BOLT), &curr_tracer);
+
+                curr_tracer.x += 12;
+                AppendEntityBolt(ents, InitBoltEntity(&bolt, ET_ENEMY_BOLT), &curr_tracer);
+
+                ents->elems[j]->next_bolt = GetStopWatchTicks() + TF_BOLT_FT;
+            }
+        }
+    }
+}
+
+static bool DidEnemyShipsBoltHitPlayer(EntityType sender, EntityType receiver)
+{
+    return (sender == ET_ENEMY_BOLT && receiver == ET_PLAYER);
+}
+
+static bool DidPlayerHitPowerUp(EntityType sender, EntityType receiver)
+{
+    return (sender == ET_PLAYER && receiver == ET_POWERUP);
+}
+
+static bool DidPlayerSendersHitEnemyShip(EntityType sender, EntityType receiver)
+{
+    return ((sender == ET_PLAYER || sender == ET_PLAYER_BOLT) && receiver == ET_ENEMY_SHIP);
+}
+
+static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
+{
+    return ((sender == ET_PLAYER || sender == ET_PLAYER_BOLT) && receiver == ET_ASTER);
+}
+
+static void SetEmptyEntityInteraction(EntityInteraction *ei)
+{
+    ei->sender_index = 0;
+    ei->receiver_index = 0;
+    ei->sender_type = ET_NONE;
+    ei->receiver_type = ET_NONE;
+    ei->is_sender_destroyed = false;
+    ei->is_receiver_destroyed = false;
+}
+
+bool IsEntityCollision(EntityInteraction *ei, Entities *ents)
+{
+    SetEmptyEntityInteraction(ei);
+
+    for (int i = PLAYER_ENT; i < ents->size; i++)
+    {
+        for (int j = 1; j < ents->size; j++)
+        {
+            ei->sender_type = ents->elems[i]->ent_type;
+            ei->receiver_type = ents->elems[j]->ent_type;
+
+            if (ents->elems[i] != ents->elems[j]
+                && SDL_HasIntersection(&ents->elems[i]->box, &ents->elems[j]->box))
+            {
+                if (!(DidPlayerSendersHitAster(ei->sender_type, ei->receiver_type)
+                    || DidPlayerSendersHitEnemyShip(ei->sender_type, ei->receiver_type)
+                    || DidPlayerHitPowerUp(ei->sender_type, ei->receiver_type)
+                    || DidEnemyShipsBoltHitPlayer(ei->receiver_type, ei->sender_type)))
+                {
+                    continue;
+                }
+
+                ei->sender_index = i;
+                ei->receiver_index = j;
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool IsEntDestroyed(Entities *ents, int sender, int receiver)
 {
     Entity *ent_sender = ents->elems[sender];
     Entity *ent_receiver = ents->elems[receiver];
@@ -575,64 +762,28 @@ static bool DoEntityDamages(Entities *ents, int sender, int receiver)
     return false;
 }
 
-static bool DidPlayerHitPowerUp(EntityType sender, EntityType receiver)
+void DoEntityDamages(EntityInteraction *ei, Entities *ents, SDL_Renderer *renderer)
 {
-    return (sender == ET_PLAYER && receiver == ET_POWERUP);
-}
+    // I need to check both of them before I free
+    // either one of them.
+    ei->is_sender_destroyed = IsEntDestroyed(ents, ei->sender_index, ei->receiver_index);
+    ei->is_receiver_destroyed = IsEntDestroyed(ents, ei->receiver_index, ei->sender_index);
 
-static bool DidPlayerSendersHitAster(EntityType sender, EntityType receiver)
-{
-    return ((sender == ET_PLAYER || sender == ET_PLAYER_BOLT) && receiver == ET_ASTER);
-}
-
-EntityCollision DetectEntityCollision(Entities *ents, SDL_Renderer *renderer)
-{
-    EntityCollision ec = {ET_NONE, ET_NONE, false, false};
-
-    for (int i = PLAYER_ENT; i < ents->size; i++)
+    if (ei->is_sender_destroyed)
     {
-        for (int j = 1; j < ents->size; j++)
-        {
-            if (ents->elems[i] != ents->elems[j]
-                && SDL_HasIntersection(&ents->elems[i]->box, &ents->elems[j]->box))
-            {
-                ec.sender = ents->elems[i]->ent_type;
-                ec.receiver = ents->elems[j]->ent_type;
-        
-                if (!(DidPlayerSendersHitAster(ec.sender, ec.receiver)
-                    || DidPlayerHitPowerUp(ec.sender, ec.receiver)))
-                {
-                    continue;
-                }
-
-                // I need to check both of them before I free
-                // either one of them.
-                ec.is_sender_destroyed = DoEntityDamages(ents, i, j);
-                ec.is_receiver_destroyed = DoEntityDamages(ents, j, i);
-
-                if (ec.is_sender_destroyed)
-                {
-                    RemoveEntityFromArray(ents, i);
-                }
-
-                if (ec.is_receiver_destroyed)
-                {
-                    // If the receiver was destroyed and
-                    // it was an asteroid then play an
-                    // explosion effect.
-                    if (ec.receiver == ET_ASTER)
-                    {
-                        AppendEntityExplo(ents, InitExploEntity(&ents->elems[j]->box, renderer));
-                    }
-
-                    RemoveEntityFromArray(ents, j);
-                }
-
-                return ec;
-            }
-        }
+        RemoveEntityFromArray(ents, ei->sender_index);
     }
 
-    SetEmptyEntityCollision(&ec);
-    return ec;
+    if (ei->is_receiver_destroyed)
+    {
+        // If the receiver was destroyed and it was an asteroid
+        // or an enemy ship then play an explosion effect.
+        if (ei->receiver_type == ET_ASTER
+            || ei->receiver_type == ET_ENEMY_SHIP)
+        {
+            AppendEntityExplo(ents, InitExploEntity(&ents->elems[ei->receiver_index]->box, renderer));
+        }
+
+        RemoveEntityFromArray(ents, ei->receiver_index);
+    }
 }

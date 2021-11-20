@@ -9,12 +9,10 @@ void RunSWSB(void)
 
     Entity *player_ship = InitPlayerEntity(handler.wrenderer);
 
-    EntityCollision ec = {ET_NONE, ET_NONE, false, false};
-    BoltComponent bolt = {2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255};
+    EntityInteraction ei = {0, 0, ET_NONE, ET_NONE, false, false};
+    BoltComponent bolt = {2, 20, PLAYER_BOLT_VEL, PLAYER_BOLT_DAMAGE, 255, 0, 0, 255};
+    Uint32 ents_next_spawn[ET_NUM_ENTITIES] = {0, 0, 0, ASTER_IST, PW_IST, 0, TF_IST, 0};
 
-    Uint32 player_next_shot = 0;
-    Uint32 aster_next_spawn = ASTER_IST;
-    Uint32 powerup_next_spawn = PW_IST;
     Uint32 powerup_expired = 0;
     Uint32 current_ticks = 0;
 
@@ -53,6 +51,7 @@ void RunSWSB(void)
 
         current_ticks = GetStopWatchTicks();
 
+
         /*
         ==============
         Update Player.
@@ -81,46 +80,64 @@ void RunSWSB(void)
 
         /*
         ==============
+        Entity Interaction.
+        ==============
+        */
+        EntityEnemyDetection(&total_ents);
+
+        if (IsEntityCollision(&ei, &total_ents))
+        {
+            DoEntityDamages(&ei, &total_ents, handler.wrenderer);
+
+             // If we got a powerup.
+            if (!(ei.is_sender_destroyed) && ei.is_receiver_destroyed
+                && ei.sender_type == ET_PLAYER && ei.receiver_type == ET_POWERUP)
+            {
+                SetBoltComponent(&bolt, 2, 20, PLAYER_BOLT_VEL*2, PLAYER_BOLT_DAMAGE, 255, 255, 0, 255);
+                powerup_expired = current_ticks + PW_FAST;
+            }
+        }
+
+
+        /*
+        ==============
         Add new Entities.
         ==============
         */
-        ec = DetectEntityCollision(&total_ents, handler.wrenderer);
-
-        // If we got a powerup.
-        if (!(ec.is_sender_destroyed) && ec.is_receiver_destroyed
-            && ec.sender == ET_PLAYER && ec.receiver == ET_POWERUP)
-        {
-            SetBoltComponent(&bolt, 2, 20, SHOT_VEL*2, SHOT_DAMAGE, 0, 255, 0, 255);
-            powerup_expired = current_ticks + PW_FAST;
-        }
-
         // If our power up is expired, set it back
         // to a default shot.
         if (current_ticks > powerup_expired)
         {
-            SetBoltComponent(&bolt, 2, 20, SHOT_VEL, SHOT_DAMAGE, 255, 0, 0, 255);
+            SetBoltComponent(&bolt, 2, 20, PLAYER_BOLT_VEL, PLAYER_BOLT_DAMAGE, 255, 0, 0, 255);
         }
 
         // If the user fires, spawn a new bolt.
         if (handler.keyboard[SDL_SCANCODE_SPACE]
-            && current_ticks > player_next_shot)
+            && current_ticks > player_ship->next_bolt)
         {
             AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->box);
-            player_next_shot = current_ticks + PLAYER_FT;
+            player_ship->next_bolt = current_ticks + PLAYER_BOLT_FT;
         }
 
         // If our time is up, spawn a new asteroid.
-        if (current_ticks > aster_next_spawn)
+        if (current_ticks > ents_next_spawn[ET_ASTER])
         {
             AppendEntityAster(&total_ents, handler.wrenderer);
-            aster_next_spawn = current_ticks + ASTER_CST;
+            ents_next_spawn[ET_ASTER] = current_ticks + ASTER_CST;
         }
 
         // If our time is up, spawn a new power up.
-        if (current_ticks > powerup_next_spawn)
+        if (current_ticks > ents_next_spawn[ET_POWERUP])
         {
             AppendEntityPowerUp(&total_ents);
-            powerup_next_spawn = current_ticks + PW_CST;
+            ents_next_spawn[ET_POWERUP] = current_ticks + PW_CST;
+        }
+
+        // If our time is up, spawn a new power up.
+        if (current_ticks > ents_next_spawn[ET_ENEMY_SHIP])
+        {
+            AppendEntityEnemyShip(&total_ents, handler.wrenderer);
+            ents_next_spawn[ET_ENEMY_SHIP] = current_ticks + TF_CST;
         }
 
 
@@ -131,8 +148,8 @@ void RunSWSB(void)
         */
         current_score += POINTS_PER_FRAME;
 
-        if (ec.is_sender_destroyed && ec.is_receiver_destroyed
-            && ec.sender == ET_PLAYER_BOLT && ec.receiver == ET_ASTER)
+        if (ei.is_sender_destroyed && ei.is_receiver_destroyed
+            && ei.sender_type == ET_PLAYER_BOLT && ei.receiver_type == ET_ASTER)
         {
             current_score += ASTER_POINTS;
         }

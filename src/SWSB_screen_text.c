@@ -9,7 +9,20 @@ static void SetScreenTextTexture(SDL_Renderer *renderer, ScreenText *st)
 {
     SDL_Surface *text_surface = TTF_RenderText_Solid(st->font, st->text_buffer, st->color);
 
+    if (text_surface == NULL)
+    {
+        printf("Could not allocate memory for text surface.\n");
+        exit(1);
+    }
+
     st->texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+
+    if (st->texture == NULL)
+    {
+        printf("Could not create text texture: %s\n", SDL_GetError());
+        exit(1);
+    }
+
     st->rect.w = text_surface->w;
     st->rect.h = text_surface->h;
 
@@ -20,7 +33,7 @@ ScreenText InitScreenTextScore(SDL_Renderer *renderer, const char *text)
 {
     if (TTF_Init() == -1)
     {
-        printf("Could not initialize ttf.\n");
+        printf("Could not initialize TTF.\n");
         exit(1);
     }
 
@@ -29,6 +42,13 @@ ScreenText InitScreenTextScore(SDL_Renderer *renderer, const char *text)
     memcpy(st.text_buffer, text, MAX_BUFFER);
 
     st.font = TTF_OpenFont(GAME_FONT, SCORE_FONT_SIZE);
+
+    if (st.font == NULL)
+    {
+        printf("Could not initialize font.\n");
+        exit(1);
+    }
+
     st.color.r = 255;
     st.color.g = 255;
     st.color.b = 255;

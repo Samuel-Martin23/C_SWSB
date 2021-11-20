@@ -18,7 +18,11 @@ typedef enum
     ET_PLAYER_BOLT,
     ET_ASTER,
     ET_POWERUP,
-    ET_EXPLO
+    ET_EXPLO,
+    ET_ENEMY_SHIP,
+    ET_ENEMY_BOLT,
+
+    ET_NUM_ENTITIES
 } EntityType;
 
 typedef enum
@@ -46,7 +50,11 @@ typedef enum
     EXPLO_SPRITE_7,
     EXPLO_SPRITE_8,
 
-    EXPLO_SPRITE_NUM
+    EXPLO_SPRITE_NUM,
+
+
+    TF_SPRITE_IDLE,
+    TF_SPRITE_NUM
 } SpriteType;
 
 typedef struct Entity
@@ -54,6 +62,7 @@ typedef struct Entity
     int vel;
     int damage;
     int health;
+    Uint32 next_bolt;
     EntityType ent_type;
 
     bool (*IsEntOutOfBounds)(struct Entity *ent);
@@ -61,6 +70,8 @@ typedef struct Entity
 
     SDL_Rect box;
     SDL_Color color;
+
+    SDL_Rect tracer;
 
     Uint32 sprite_speed;
     Uint32 sprite_frames;
@@ -90,11 +101,13 @@ typedef struct
 
 typedef struct
 {
-    EntityType sender;
-    EntityType receiver;
+    int sender_index;
+    int receiver_index;
+    EntityType sender_type;
+    EntityType receiver_type;
     bool is_sender_destroyed;
     bool is_receiver_destroyed;
-} EntityCollision;
+} EntityInteraction;
 
 /*
 ==============
@@ -111,7 +124,7 @@ Bolt Entity
 ==============
 */
 Entity *InitBoltEntity(BoltComponent *bolt, EntityType type);
-void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *player_box);
+void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *ship_box);
 void SetBoltComponent(BoltComponent *bolt, int w, int h, int vel,
                         int damage, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 
@@ -145,6 +158,15 @@ void AppendEntityExplo(Entities *ents, Entity *explo_ent);
 
 /*
 ==============
+Enemy Ship Entity
+==============
+*/
+Entity *InitEnemyShipEntity(SDL_Renderer *renderer);
+void AppendEntityEnemyShip(Entities *ents, SDL_Renderer *renderer);
+
+
+/*
+==============
 Entities
 ==============
 */
@@ -153,8 +175,11 @@ void FreeEntities(Entities *ents);
 
 /*
 ==============
-Entity Collision
+Entity Interaction
 ==============
 */
-EntityCollision DetectEntityCollision(Entities *ents, SDL_Renderer *renderer);
+void EntityEnemyDetection(Entities *ents);
+bool IsEntityCollision(EntityInteraction *ei, Entities *ents);
+void DoEntityDamages(EntityInteraction *ei, Entities *ents, SDL_Renderer *renderer);
+
 #endif /* SWSB_ENT_H */
