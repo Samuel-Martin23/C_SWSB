@@ -7,8 +7,6 @@ void RunSWSB(void)
     Entities total_ents = {0, MAX_ENTS, {NULL}};
     ScreenText game_score = InitScreenTextScore(handler.wrenderer, "000000000");
 
-    Entity *player_ship = InitPlayerEntity(handler.wrenderer);
-
     EntityInteraction ei = {0, 0, ET_NONE, ET_NONE, false, false};
     BoltComponent bolt = {2, 20, PLAYER_BOLT_VEL, PLAYER_BOLT_DAMAGE, 255, 0, 0, 255};
     Uint32 ents_next_spawn[ET_NUM_ENTITIES] = {0, 0, 0, ASTER_IST, PW_IST, 0, TF_IST, 0};
@@ -16,11 +14,11 @@ void RunSWSB(void)
     Uint32 powerup_expired = 0;
     Uint32 current_ticks = 0;
 
+    Entity *player_ship = NULL;
     bool is_paused = false;
     int current_score = 0;
 
-
-    AppendEntityPlayer(&total_ents, player_ship);
+    AppendEntityPlayer(&total_ents, InitPlayerEntity(handler.wrenderer));
     StartStopWatch();
 
     while (true)
@@ -41,7 +39,7 @@ void RunSWSB(void)
 
         CheckGamePaused(&handler, &is_paused);
 
-        if (!(total_ents.elems[PLAYER_ENT]->health) || is_paused)
+        if (is_paused)
         {
             PauseStopWatch();
             continue;
@@ -60,19 +58,21 @@ void RunSWSB(void)
         SDL_SetRenderDrawColor(handler.wrenderer, 0, 0, 0, 255);
         SDL_RenderClear(handler.wrenderer);
 
-        if (handler.keyboard[SDL_SCANCODE_A] && player_ship->src_rect.x > 0)
+        player_ship = total_ents.elems[PLAYER_ENT];
+
+        if (handler.keyboard[SDL_SCANCODE_A] && player_ship && player_ship->src_rect.x > 0)
         {
             player_ship->src_rect.x -= player_ship->vel; 
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (handler.keyboard[SDL_SCANCODE_D] && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
+        if (handler.keyboard[SDL_SCANCODE_D] && player_ship && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
         {
             player_ship->src_rect.x += player_ship->vel;
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (!(handler.keyboard[SDL_SCANCODE_A]) && !(handler.keyboard[SDL_SCANCODE_D]))
+        if (!(handler.keyboard[SDL_SCANCODE_A]) && !(handler.keyboard[SDL_SCANCODE_D]) && player_ship)
         {
             player_ship->sprite_type = MF_SPRITE_IDLE;
         }
@@ -98,7 +98,6 @@ void RunSWSB(void)
             }
         }
 
-
         /*
         ==============
         Add new Entities.
@@ -113,7 +112,7 @@ void RunSWSB(void)
 
         // If the user fires, spawn a new bolt.
         if (handler.keyboard[SDL_SCANCODE_SPACE]
-            && current_ticks > player_ship->next_bolt)
+            && player_ship && current_ticks > player_ship->next_bolt)
         {
             AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->src_rect);
             player_ship->next_bolt = current_ticks + PLAYER_BOLT_FT;
@@ -166,7 +165,10 @@ void RunSWSB(void)
             current_score += TF_PLAYER_HIT_POINTS;
         }
 
-        SetScoreScreenText(&game_score, current_score, handler.wrenderer);
+        if (player_ship)
+        {
+            SetScoreScreenText(&game_score, current_score, handler.wrenderer);
+        }
 
 
         /*

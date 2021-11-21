@@ -115,7 +115,10 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
 
 static void RenderEntityPlayer(Entity *player_ent, SDL_Renderer *renderer)
 {
-    SDL_RenderCopy(renderer, player_ent->textures[player_ent->sprite_type], NULL, &player_ent->src_rect);
+    if (player_ent)
+    {
+        SDL_RenderCopy(renderer, player_ent->textures[player_ent->sprite_type], NULL, &player_ent->src_rect);
+    }
 }
 
 void AppendEntityPlayer(Entities *ents, Entity *player_ent)
@@ -572,6 +575,11 @@ Entities
 */
 static void FreeEntity(Entities *ents, int index)
 {
+    if (!(ents->elems[index]))
+    {
+        return;
+    }
+
     int i = 0;
 
     while (ents->elems[index]->textures[i] != NULL)
@@ -581,18 +589,26 @@ static void FreeEntity(Entities *ents, int index)
     }
 
     free(ents->elems[index]);
+
+    ents->elems[index] = NULL;
 }
 
 static void RemoveEntityFromArray(Entities *ents, int index)
 {
     FreeEntity(ents, index);
 
-    for (int i = index; i < (ents->size - 1); i++)
+    // Even though the player is freed, we still want the first index 
+    // to be the player as it makes it super easy to test if the
+    // player is gone by NULLing out the first index.
+    if (index != PLAYER_ENT)
     {
-        ents->elems[i] = ents->elems[i + 1];
-    }
+        for (int i = index; i < (ents->size - 1); i++)
+        {
+            ents->elems[i] = ents->elems[i + 1];
+        }
 
-    ents->size--;
+        ents->size--;
+    }
 }
 
 static bool IsEntitiesFull(Entities *ents)
@@ -614,14 +630,18 @@ void RenderEntities(Entities *ents, SDL_Renderer *renderer)
     {
         curr_ent = ents->elems[i];
 
-        // Some Entities might not have an out of bounds function.
-        if (curr_ent->IsEntOutOfBounds && curr_ent->IsEntOutOfBounds(curr_ent))
+        if (curr_ent)
         {
-            RemoveEntityFromArray(ents, i);
-            continue;
+            // Some Entities might not have an out of bounds function.
+            if (curr_ent->IsEntOutOfBounds && curr_ent->IsEntOutOfBounds(curr_ent))
+            {
+                RemoveEntityFromArray(ents, i);
+                continue;
+            }
+
+            curr_ent->RenderEntity(curr_ent, renderer);
         }
 
-        curr_ent->RenderEntity(curr_ent, renderer);
         i++;
     }
 }
@@ -647,6 +667,11 @@ static bool DidEnemyShipsDetectPlayer(EntityType sender, EntityType receiver)
 
 void EntityEnemyDetection(Entities *ents)
 {
+    if (!(ents->elems[PLAYER_ENT]))
+    {
+        return;
+    }
+
     EntityType sender = ET_NONE;
     EntityType receiver = ents->elems[PLAYER_ENT]->ent_type;
     BoltComponent bolt = {2, 20, -TF_BOLT_VEL, TF_BOLT_DAMAGE, 0, 255, 0, 255};
@@ -710,6 +735,11 @@ bool IsEntityCollision(EntityInteraction *ei, Entities *ents)
 
     for (int i = PLAYER_ENT; i < ents->size; i++)
     {
+        if (!(ents->elems[i]))
+        {
+            continue;
+        }
+
         for (int j = 1; j < ents->size; j++)
         {
             ei->sender_type = ents->elems[i]->ent_type;
@@ -745,11 +775,9 @@ static bool IsEntDestroyed(Entities *ents, int sender, int receiver)
 
     if (ent_health <= 0)
     {
-        // Don't remove the player.
         if (sender == PLAYER_ENT)
         {
             ent_sender->health = 0;
-            return false;
         }
 
         return true;
@@ -771,6 +799,11 @@ void DoEntityDamages(EntityInteraction *ei, Entities *ents, SDL_Renderer *render
 
     if (ei->is_sender_destroyed)
     {
+        if (ei->sender_type == ET_PLAYER)
+        {
+            AppendEntityExplo(ents, InitExploEntity(&ents->elems[ei->sender_index]->src_rect, renderer));
+        }
+
         RemoveEntityFromArray(ents, ei->sender_index);
     }
 
