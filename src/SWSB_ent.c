@@ -88,10 +88,10 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
     player_ent->IsEntOutOfBounds = NULL;
     player_ent->RenderEntity = RenderEntityPlayer;
 
-    player_ent->box.x = PLAYER_X;
-    player_ent->box.y = PLAYER_Y;
-    player_ent->box.w = PLAYER_W;
-    player_ent->box.h = PLAYER_H;
+    player_ent->src_rect.x = PLAYER_X;
+    player_ent->src_rect.y = PLAYER_Y;
+    player_ent->src_rect.w = PLAYER_W;
+    player_ent->src_rect.h = PLAYER_H;
 
     player_ent->color.r = 0;
     player_ent->color.g = 0;
@@ -115,7 +115,7 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
 
 static void RenderEntityPlayer(Entity *player_ent, SDL_Renderer *renderer)
 {
-    SDL_RenderCopy(renderer, player_ent->textures[player_ent->sprite_type], NULL, &player_ent->box);
+    SDL_RenderCopy(renderer, player_ent->textures[player_ent->sprite_type], NULL, &player_ent->src_rect);
 }
 
 void AppendEntityPlayer(Entities *ents, Entity *player_ent)
@@ -151,10 +151,10 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
     bolt_ent->IsEntOutOfBounds = IsBoltOutOfBounds;
     bolt_ent->RenderEntity = RenderEntityBolt;
 
-    bolt_ent->box.x = 0;
-    bolt_ent->box.y = 0;
-    bolt_ent->box.w = bolt->w;
-    bolt_ent->box.h = bolt->h;
+    bolt_ent->src_rect.x = 0;
+    bolt_ent->src_rect.y = 0;
+    bolt_ent->src_rect.w = bolt->w;
+    bolt_ent->src_rect.h = bolt->h;
 
     bolt_ent->color.r = bolt->r;
     bolt_ent->color.g = bolt->g;
@@ -173,7 +173,7 @@ Entity *InitBoltEntity(BoltComponent *bolt, EntityType type)
 
 static bool IsBoltOutOfBounds(Entity *bolt_ent)
 {
-    if (bolt_ent->box.y > 0)
+    if (bolt_ent->src_rect.y > 0)
     {
         return false;
     }
@@ -183,18 +183,18 @@ static bool IsBoltOutOfBounds(Entity *bolt_ent)
 
 static void RenderEntityBolt(Entity *bolt_ent, SDL_Renderer *renderer)
 {
-    bolt_ent->box.y -= bolt_ent->vel;
+    bolt_ent->src_rect.y -= bolt_ent->vel;
     SDL_SetRenderDrawColor(renderer, bolt_ent->color.r, bolt_ent->color.g,
                             bolt_ent->color.b, bolt_ent->color.a);
-    SDL_RenderFillRect(renderer, &bolt_ent->box);
+    SDL_RenderFillRect(renderer, &bolt_ent->src_rect);
 }
 
 void AppendEntityBolt(Entities *ents, Entity *bolt_ent, SDL_Rect *ship_box)
 {
     if (!(IsEntitiesFull(ents)))
     {
-        bolt_ent->box.x = ship_box->x + (ship_box->w / 2);
-        bolt_ent->box.y = ship_box->y - bolt_ent->box.h;
+        bolt_ent->src_rect.x = ship_box->x + (ship_box->w / 2);
+        bolt_ent->src_rect.y = ship_box->y - bolt_ent->src_rect.h;
         ents->elems[ents->size++] = bolt_ent;
     }
 }
@@ -242,10 +242,10 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
     aster_ent->IsEntOutOfBounds = IsAsterOutOfBounds;
     aster_ent->RenderEntity = RenderEntityAster;
 
-    aster_ent->box.w = rand_int(ASTER_MIN_SIZE, ASTER_MAX_SIZE);
-    aster_ent->box.h = aster_ent->box.w;
-    aster_ent->box.x = rand_int(0, (SCREEN_WIDTH - (aster_ent->box.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
-    aster_ent->box.y = -aster_ent->box.h;
+    aster_ent->src_rect.w = rand_int(ASTER_MIN_SIZE, ASTER_MAX_SIZE);
+    aster_ent->src_rect.h = aster_ent->src_rect.w;
+    aster_ent->src_rect.x = rand_int(0, (SCREEN_WIDTH - (aster_ent->src_rect.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
+    aster_ent->src_rect.y = -aster_ent->src_rect.h;
 
     aster_ent->color.r = 0;
     aster_ent->color.g = 0;
@@ -270,7 +270,7 @@ Entity *InitAsteroidEntity(SDL_Renderer *renderer)
 
 static bool IsAsterOutOfBounds(Entity *aster_ent)
 {
-    if ((aster_ent->box.y + (aster_ent->box.h / 3)) >= SCREEN_HEIGHT)
+    if ((aster_ent->src_rect.y + (aster_ent->src_rect.h / 3)) >= SCREEN_HEIGHT)
     {
         return true;
     }
@@ -298,8 +298,8 @@ static SpriteType GetAsterSprite(Entity *aster_ent)
 
 static void RenderEntityAster(Entity *aster_ent, SDL_Renderer *renderer)
 {
-    aster_ent->box.y += aster_ent->vel;
-    SDL_RenderCopy(renderer, aster_ent->textures[GetAsterSprite(aster_ent)], NULL, &aster_ent->box);
+    aster_ent->src_rect.y += aster_ent->vel;
+    SDL_RenderCopy(renderer, aster_ent->textures[GetAsterSprite(aster_ent)], NULL, &aster_ent->src_rect);
 }
 
 void AppendEntityAster(Entities *ents, SDL_Renderer *renderer)
@@ -335,10 +335,10 @@ Entity *InitPowerUpEntity(void)
     power_up_ent->IsEntOutOfBounds = IsPowerUpOutOfBounds;
     power_up_ent->RenderEntity = RenderEntityPowerUp;
 
-    power_up_ent->box.x = rand_int(0, SCREEN_WIDTH - PW_WIDTH);
-    power_up_ent->box.y = -PW_HEIGHT;
-    power_up_ent->box.w = PW_WIDTH;
-    power_up_ent->box.h = PW_HEIGHT;
+    power_up_ent->src_rect.x = rand_int(0, SCREEN_WIDTH - PW_WIDTH);
+    power_up_ent->src_rect.y = -PW_HEIGHT;
+    power_up_ent->src_rect.w = PW_WIDTH;
+    power_up_ent->src_rect.h = PW_HEIGHT;
 
     SetRGBPowerUp(power_up_ent);
     power_up_ent->color.a = 255;
@@ -355,7 +355,7 @@ Entity *InitPowerUpEntity(void)
 
 static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
 {
-    if (power_up_ent->box.y <= SCREEN_HEIGHT)
+    if (power_up_ent->src_rect.y <= SCREEN_HEIGHT)
     {
         return false;
     }
@@ -365,16 +365,16 @@ static bool IsPowerUpOutOfBounds(Entity *power_up_ent)
 
 static void RenderEntityPowerUp(Entity *power_up_ent, SDL_Renderer *renderer)
 {
-    power_up_ent->box.y += power_up_ent->vel;
+    power_up_ent->src_rect.y += power_up_ent->vel;
 
-    if ((power_up_ent->box.y % 20) == 0)
+    if ((power_up_ent->src_rect.y % 20) == 0)
     {
         SetRGBPowerUp(power_up_ent);
     }
 
     SDL_SetRenderDrawColor(renderer, power_up_ent->color.r, power_up_ent->color.g,
                             power_up_ent->color.b, power_up_ent->color.a);
-    SDL_RenderFillRect(renderer, &power_up_ent->box);
+    SDL_RenderFillRect(renderer, &power_up_ent->src_rect);
 }
 
 static void SetRGBPowerUp(Entity *power_up_ent)
@@ -420,7 +420,7 @@ Entity *InitExploEntity(SDL_Rect *ent_rect, SDL_Renderer *renderer)
     explo_ent->IsEntOutOfBounds = IsExploOutOfBounds;
     explo_ent->RenderEntity = RenderEntityExplo;
 
-    explo_ent->box = *ent_rect;
+    explo_ent->src_rect = *ent_rect;
 
     explo_ent->color.r = 0;
     explo_ent->color.g = 0;
@@ -467,8 +467,8 @@ static SpriteType GetExploSprite(Entity *explo_ent)
 
 static void RenderEntityExplo(Entity *explo_ent, SDL_Renderer *renderer)
 {
-    explo_ent->box.y += explo_ent->vel;
-    SDL_RenderCopy(renderer, explo_ent->textures[GetExploSprite(explo_ent)], NULL, &explo_ent->box);
+    explo_ent->src_rect.y += explo_ent->vel;
+    SDL_RenderCopy(renderer, explo_ent->textures[GetExploSprite(explo_ent)], NULL, &explo_ent->src_rect);
 }
 
 void AppendEntityExplo(Entities *ents, Entity *explo_ent)
@@ -504,19 +504,19 @@ Entity *InitEnemyShipEntity(SDL_Renderer *renderer)
     enemy_ship_ent->IsEntOutOfBounds = IsEnemyShipOutOfBounds;
     enemy_ship_ent->RenderEntity = RenderEnemyShip;
 
-    enemy_ship_ent->box.w = TF_W;
-    enemy_ship_ent->box.h = TF_H;
-    enemy_ship_ent->box.x = rand_int(0, (SCREEN_WIDTH - (enemy_ship_ent->box.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
-    enemy_ship_ent->box.y = -enemy_ship_ent->box.h;
+    enemy_ship_ent->src_rect.w = TF_W;
+    enemy_ship_ent->src_rect.h = TF_H;
+    enemy_ship_ent->src_rect.x = rand_int(0, (SCREEN_WIDTH - (enemy_ship_ent->src_rect.w + PLAYER_HALF_W))) + PLAYER_QTR_W;
+    enemy_ship_ent->src_rect.y = -enemy_ship_ent->src_rect.h;
 
     enemy_ship_ent->color.r = 0;
     enemy_ship_ent->color.g = 0;
     enemy_ship_ent->color.b = 0;
     enemy_ship_ent->color.a = 255;
 
-    enemy_ship_ent->tracer.x = enemy_ship_ent->box.x;
+    enemy_ship_ent->tracer.x = enemy_ship_ent->src_rect.x;
     enemy_ship_ent->tracer.y = 0;
-    enemy_ship_ent->tracer.w = enemy_ship_ent->box.w;
+    enemy_ship_ent->tracer.w = enemy_ship_ent->src_rect.w;
     enemy_ship_ent->tracer.h = SCREEN_HEIGHT;
 
     enemy_ship_ent->sprite_speed = 0;
@@ -536,7 +536,7 @@ Entity *InitEnemyShipEntity(SDL_Renderer *renderer)
 
 static bool IsEnemyShipOutOfBounds(Entity *enemy_ship_ent)
 {
-    if ((enemy_ship_ent->box.y + (enemy_ship_ent->box.h / 3)) >= SCREEN_HEIGHT)
+    if ((enemy_ship_ent->src_rect.y + (enemy_ship_ent->src_rect.h / 3)) >= SCREEN_HEIGHT)
     {
         return true;
     }
@@ -546,10 +546,10 @@ static bool IsEnemyShipOutOfBounds(Entity *enemy_ship_ent)
 
 static void RenderEnemyShip(Entity *enemy_ship_ent, SDL_Renderer *renderer)
 {
-    enemy_ship_ent->box.y += enemy_ship_ent->vel;
-    SDL_RenderCopy(renderer, enemy_ship_ent->textures[0], NULL, &enemy_ship_ent->box);
+    enemy_ship_ent->src_rect.y += enemy_ship_ent->vel;
+    SDL_RenderCopy(renderer, enemy_ship_ent->textures[0], NULL, &enemy_ship_ent->src_rect);
 
-    enemy_ship_ent->tracer.y = enemy_ship_ent->box.y + enemy_ship_ent->box.h;
+    enemy_ship_ent->tracer.y = enemy_ship_ent->src_rect.y + enemy_ship_ent->src_rect.h;
     enemy_ship_ent->tracer.h = (SCREEN_HEIGHT - enemy_ship_ent->tracer.y);
 
     // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -656,7 +656,7 @@ void EntityEnemyDetection(Entities *ents)
     {
         sender = ents->elems[j]->ent_type;
 
-        if (SDL_HasIntersection(&ents->elems[j]->tracer, &ents->elems[PLAYER_ENT]->box))
+        if (SDL_HasIntersection(&ents->elems[j]->tracer, &ents->elems[PLAYER_ENT]->src_rect))
         {
             if (DidEnemyShipsDetectPlayer(sender, receiver) && GetStopWatchTicks() > ents->elems[j]->next_bolt)
             {
@@ -716,7 +716,7 @@ bool IsEntityCollision(EntityInteraction *ei, Entities *ents)
             ei->receiver_type = ents->elems[j]->ent_type;
 
             if (ents->elems[i] != ents->elems[j]
-                && SDL_HasIntersection(&ents->elems[i]->box, &ents->elems[j]->box))
+                && SDL_HasIntersection(&ents->elems[i]->src_rect, &ents->elems[j]->src_rect))
             {
                 if (!(DidPlayerSendersHitAster(ei->sender_type, ei->receiver_type)
                     || DidPlayerSendersHitEnemyShip(ei->sender_type, ei->receiver_type)
@@ -781,7 +781,7 @@ void DoEntityDamages(EntityInteraction *ei, Entities *ents, SDL_Renderer *render
         if (ei->receiver_type == ET_ASTER
             || ei->receiver_type == ET_ENEMY_SHIP)
         {
-            AppendEntityExplo(ents, InitExploEntity(&ents->elems[ei->receiver_index]->box, renderer));
+            AppendEntityExplo(ents, InitExploEntity(&ents->elems[ei->receiver_index]->src_rect, renderer));
         }
 
         RemoveEntityFromArray(ents, ei->receiver_index);

@@ -83,10 +83,11 @@
 #define TF_IST                      10000
 #define TF_CST                      3000
 #define TF_POINTS                   2000
+#define TF_PLAYER_HIT_POINTS        4000
 
-#define TF_BOLT_VEL                 (5 + BACKGROUND_VEL)
+#define TF_BOLT_VEL                 (3 + TF_VEL)
 #define TF_BOLT_DAMAGE              5
-#define TF_BOLT_FT                  450
+#define TF_BOLT_FT                  425
 
 int rand_int(int min, int max);
 SDL_Texture *GetImageTexture(SDL_Renderer *renderer, const char *image_path);

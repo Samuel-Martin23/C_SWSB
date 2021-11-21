@@ -68,7 +68,7 @@ typedef struct Entity
     bool (*IsEntOutOfBounds)(struct Entity *ent);
     void (*RenderEntity)(struct Entity *ent, SDL_Renderer *renderer);
 
-    SDL_Rect box;
+    SDL_Rect src_rect;
     SDL_Color color;
 
     SDL_Rect tracer;

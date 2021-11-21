@@ -60,15 +60,15 @@ void RunSWSB(void)
         SDL_SetRenderDrawColor(handler.wrenderer, 0, 0, 0, 255);
         SDL_RenderClear(handler.wrenderer);
 
-        if (handler.keyboard[SDL_SCANCODE_A] && player_ship->box.x > 0)
+        if (handler.keyboard[SDL_SCANCODE_A] && player_ship->src_rect.x > 0)
         {
-            player_ship->box.x -= player_ship->vel; 
+            player_ship->src_rect.x -= player_ship->vel; 
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (handler.keyboard[SDL_SCANCODE_D] && (player_ship->box.x + player_ship->box.w) < SCREEN_WIDTH)
+        if (handler.keyboard[SDL_SCANCODE_D] && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
         {
-            player_ship->box.x += player_ship->vel;
+            player_ship->src_rect.x += player_ship->vel;
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
@@ -115,7 +115,7 @@ void RunSWSB(void)
         if (handler.keyboard[SDL_SCANCODE_SPACE]
             && current_ticks > player_ship->next_bolt)
         {
-            AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->box);
+            AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->src_rect);
             player_ship->next_bolt = current_ticks + PLAYER_BOLT_FT;
         }
 
@@ -152,6 +152,18 @@ void RunSWSB(void)
             && ei.sender_type == ET_PLAYER_BOLT && ei.receiver_type == ET_ASTER)
         {
             current_score += ASTER_POINTS;
+        }
+
+        if (ei.is_sender_destroyed && ei.is_receiver_destroyed
+            && ei.sender_type == ET_PLAYER_BOLT && ei.receiver_type == ET_ENEMY_SHIP)
+        {
+            current_score += TF_POINTS;
+        }
+
+        if (!(ei.is_sender_destroyed) && ei.is_receiver_destroyed
+            && ei.sender_type == ET_PLAYER && ei.receiver_type == ET_ENEMY_SHIP)
+        {
+            current_score += TF_PLAYER_HIT_POINTS;
         }
 
         SetScoreScreenText(&game_score, current_score, handler.wrenderer);
