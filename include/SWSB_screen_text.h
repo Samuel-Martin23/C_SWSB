@@ -17,6 +17,7 @@ typedef struct
 } ScreenText;
 
 ScreenText InitScreenTextScore(SDL_Renderer *renderer, const char *text);
+ScreenText InitScreenTextStart(SDL_Renderer *renderer, const char *text);
 void SetScoreScreenText(ScreenText *st, int score, SDL_Renderer *renderer);
 void RenderScreenText(ScreenText *st, SDL_Renderer *renderer);
 void FreeScreenText(ScreenText *st);

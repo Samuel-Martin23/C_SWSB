@@ -82,7 +82,7 @@ Entity *InitPlayerEntity(SDL_Renderer *renderer)
     player_ent->vel = PLAYER_VEL;
     player_ent->damage = PLAYER_DAMAGE;
     player_ent->health = PLAYER_HEALTH;
-    player_ent->next_bolt = 0;
+    player_ent->next_bolt = PLAYER_BOLT_IFT;
     player_ent->ent_type = ET_PLAYER;
 
     player_ent->IsEntOutOfBounds = NULL;
@@ -573,29 +573,10 @@ void AppendEntityEnemyShip(Entities *ents, SDL_Renderer *renderer)
 Entities
 ==============
 */
-static void FreeEntity(Entities *ents, int index)
-{
-    if (!(ents->elems[index]))
-    {
-        return;
-    }
-
-    int i = 0;
-
-    while (ents->elems[index]->textures[i] != NULL)
-    {
-        SDL_DestroyTexture(ents->elems[index]->textures[i]);
-        i++;
-    }
-
-    free(ents->elems[index]);
-
-    ents->elems[index] = NULL;
-}
-
 static void RemoveEntityFromArray(Entities *ents, int index)
 {
-    FreeEntity(ents, index);
+    FreeEntity(ents->elems[index]);
+    ents->elems[index] = NULL;
 
     // Even though the player is freed, we still want the first index 
     // to be the player as it makes it super easy to test if the
@@ -646,11 +627,30 @@ void RenderEntities(Entities *ents, SDL_Renderer *renderer)
     }
 }
 
+void FreeEntity(Entity *ent)
+{
+    if (!(ent))
+    {
+        return;
+    }
+
+    int i = 0;
+
+    while (ent->textures[i] != NULL)
+    {
+        SDL_DestroyTexture(ent->textures[i]);
+        i++;
+    }
+
+    free(ent);
+}
+
 void FreeEntities(Entities *ents)
 {
     for (int i = PLAYER_ENT; i < ents->size; i++)
     {
-        FreeEntity(ents, i);
+        FreeEntity(ents->elems[i]);
+        ents->elems[i] = NULL;
     }
 }
 

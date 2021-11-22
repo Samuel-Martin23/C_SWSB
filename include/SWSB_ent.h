@@ -171,6 +171,7 @@ Entities
 ==============
 */
 void RenderEntities(Entities *ents, SDL_Renderer *renderer);
+void FreeEntity(Entity *ent);
 void FreeEntities(Entities *ents);
 
 /*

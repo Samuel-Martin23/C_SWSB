@@ -1,12 +1,12 @@
 #include "../include/SWSB.h"
 
-void RunSWSB(void)
+int RunGame(Handler *handler, Background *background)
 {
-    Handler handler = InitHandler(GAME_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    Background background = InitBackground(handler.wrenderer);
     Entities total_ents = {0, MAX_ENTS, {NULL}};
-    ScreenText game_score = InitScreenTextScore(handler.wrenderer, "000000000");
+    ScreenText game_score = InitScreenTextScore(handler->wrenderer, "000000000");
+    ScreenText restart_msg = InitScreenTextStart(handler->wrenderer, "PRESS SPACE TO RESTART");
 
+    Entity *player_ship = NULL;
     EntityInteraction ei = {0, 0, ET_NONE, ET_NONE, false, false};
     BoltComponent bolt = {2, 20, PLAYER_BOLT_VEL, PLAYER_BOLT_DAMAGE, 255, 0, 0, 255};
     Uint32 ents_next_spawn[ET_NUM_ENTITIES] = {0, 0, 0, ASTER_IST, PW_IST, 0, TF_IST, 0};
@@ -14,11 +14,12 @@ void RunSWSB(void)
     Uint32 powerup_expired = 0;
     Uint32 current_ticks = 0;
 
-    Entity *player_ship = NULL;
-    bool is_paused = false;
+    int game_code = 0;
     int current_score = 0;
+    bool is_paused = false;
 
-    AppendEntityPlayer(&total_ents, InitPlayerEntity(handler.wrenderer));
+    AppendEntityPlayer(&total_ents, InitPlayerEntity(handler->wrenderer));
+
     StartStopWatch();
 
     while (true)
@@ -30,14 +31,15 @@ void RunSWSB(void)
         Quit or pause game.
         ==============
         */
-        SDL_PollEvent(&handler.event);
+        SDL_PollEvent(&handler->event);
 
-        if (handler.event.type == SDL_QUIT)
+        if (handler->event.type == SDL_QUIT)
         {
+            game_code = GAME_QUIT;
             break;
         }
 
-        CheckGamePaused(&handler, &is_paused);
+        CheckGamePaused(handler, &is_paused);
 
         if (is_paused)
         {
@@ -55,24 +57,24 @@ void RunSWSB(void)
         Update Player.
         ==============
         */
-        SDL_SetRenderDrawColor(handler.wrenderer, 0, 0, 0, 255);
-        SDL_RenderClear(handler.wrenderer);
+        SDL_SetRenderDrawColor(handler->wrenderer, 0, 0, 0, 255);
+        SDL_RenderClear(handler->wrenderer);
 
         player_ship = total_ents.elems[PLAYER_ENT];
 
-        if (handler.keyboard[SDL_SCANCODE_A] && player_ship && player_ship->src_rect.x > 0)
+        if (handler->keyboard[SDL_SCANCODE_A] && player_ship && player_ship->src_rect.x > 0)
         {
             player_ship->src_rect.x -= player_ship->vel; 
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (handler.keyboard[SDL_SCANCODE_D] && player_ship && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
+        if (handler->keyboard[SDL_SCANCODE_D] && player_ship && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
         {
             player_ship->src_rect.x += player_ship->vel;
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (!(handler.keyboard[SDL_SCANCODE_A]) && !(handler.keyboard[SDL_SCANCODE_D]) && player_ship)
+        if (!(handler->keyboard[SDL_SCANCODE_A]) && !(handler->keyboard[SDL_SCANCODE_D]) && player_ship)
         {
             player_ship->sprite_type = MF_SPRITE_IDLE;
         }
@@ -87,7 +89,7 @@ void RunSWSB(void)
 
         if (IsEntityCollision(&ei, &total_ents))
         {
-            DoEntityDamages(&ei, &total_ents, handler.wrenderer);
+            DoEntityDamages(&ei, &total_ents, handler->wrenderer);
 
              // If we got a powerup.
             if (!(ei.is_sender_destroyed) && ei.is_receiver_destroyed
@@ -111,7 +113,7 @@ void RunSWSB(void)
         }
 
         // If the user fires, spawn a new bolt.
-        if (handler.keyboard[SDL_SCANCODE_SPACE]
+        if (handler->keyboard[SDL_SCANCODE_SPACE]
             && player_ship && current_ticks > player_ship->next_bolt)
         {
             AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->src_rect);
@@ -121,7 +123,7 @@ void RunSWSB(void)
         // If our time is up, spawn a new asteroid.
         if (current_ticks > ents_next_spawn[ET_ASTER])
         {
-            AppendEntityAster(&total_ents, handler.wrenderer);
+            AppendEntityAster(&total_ents, handler->wrenderer);
             ents_next_spawn[ET_ASTER] = current_ticks + ASTER_CST;
         }
 
@@ -135,7 +137,7 @@ void RunSWSB(void)
         // If our time is up, spawn a new power up.
         if (current_ticks > ents_next_spawn[ET_ENEMY_SHIP])
         {
-            AppendEntityEnemyShip(&total_ents, handler.wrenderer);
+            AppendEntityEnemyShip(&total_ents, handler->wrenderer);
             ents_next_spawn[ET_ENEMY_SHIP] = current_ticks + TF_CST;
         }
 
@@ -167,7 +169,8 @@ void RunSWSB(void)
 
         if (player_ship)
         {
-            SetScoreScreenText(&game_score, current_score, handler.wrenderer);
+            SetScoreScreenText(&game_score, current_score, handler->wrenderer);
+            ents_next_spawn[ET_PLAYER] = current_ticks + PLAYER_NEXT_SPAWN;
         }
 
 
@@ -176,19 +179,100 @@ void RunSWSB(void)
         Render everything.
         ==============
         */
-        RenderBackground(&background, handler.wrenderer);
-        RenderEntities(&total_ents, handler.wrenderer);
-        RenderScreenText(&game_score, handler.wrenderer);
+        RenderBackground(background, handler->wrenderer);
+        RenderEntities(&total_ents, handler->wrenderer);
+        RenderScreenText(&game_score, handler->wrenderer);
 
-        SDL_RenderPresent(handler.wrenderer);
+        // If the player is dead, when can we spawn again?
+        if (!(player_ship) && current_ticks > ents_next_spawn[ET_PLAYER])
+        {
+            // Need to render some text.
+            RenderScreenText(&restart_msg, handler->wrenderer);
+
+            if (handler->keyboard[SDL_SCANCODE_SPACE])
+            {
+                game_code = GAME_RESTART;
+                break;
+            }
+        }
+
+        SDL_RenderPresent(handler->wrenderer);
 
         current_score = 0;
 
         SetFrameRate();
     }
 
+    FreeScreenText(&restart_msg);
     FreeScreenText(&game_score);
     FreeEntities(&total_ents);
+
+    return game_code;
+}
+
+bool GameDidStart(Handler *handler, Background *background)
+{
+    bool start_game = true;
+    Entity *player = InitPlayerEntity(handler->wrenderer);
+    ScreenText start_msg = InitScreenTextStart(handler->wrenderer, "PRESS SPACE TO START");
+
+    while (true)
+    {
+        SDL_SetRenderDrawColor(handler->wrenderer, 0, 0, 0, 255);
+        SDL_RenderClear(handler->wrenderer);
+
+        SDL_PollEvent(&handler->event);
+
+        if (handler->event.type == SDL_QUIT)
+        {
+            start_game = false;
+            break;
+        }
+
+        if (handler->keyboard[SDL_SCANCODE_SPACE])
+        {
+            break;
+        }
+
+        RenderBackground(background, handler->wrenderer);
+        player->RenderEntity(player, handler->wrenderer);
+        RenderScreenText(&start_msg, handler->wrenderer);
+
+        SDL_RenderPresent(handler->wrenderer);
+
+        SetFrameRate();
+    }
+
+    FreeEntity(player);
+    FreeScreenText(&start_msg);
+
+    return start_game;
+}
+
+void RunSWSB(void)
+{
+    int game_code = 0;
+    Handler handler = InitHandler(GAME_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    Background background = InitBackground(handler.wrenderer);
+
+    if (GameDidStart(&handler, &background))
+    {
+        while (true)
+        {
+            game_code = RunGame(&handler, &background);
+
+            if (game_code == GAME_QUIT)
+            {
+                break;
+            }
+
+            if (game_code == GAME_RESTART)
+            {
+                SetBackground(&background);
+            }
+        }
+    }
+
     FreeBackgroundTexture(&background);
     FreeHandler(&handler);
     SDL_Quit();

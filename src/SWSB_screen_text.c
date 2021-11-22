@@ -64,6 +64,41 @@ ScreenText InitScreenTextScore(SDL_Renderer *renderer, const char *text)
     return st;
 }
 
+ScreenText InitScreenTextStart(SDL_Renderer *renderer, const char *text)
+{
+    if (TTF_Init() == -1)
+    {
+        printf("Could not initialize TTF.\n");
+        exit(1);
+    }
+
+    ScreenText st;
+
+    memcpy(st.text_buffer, text, MAX_BUFFER);
+
+    st.font = TTF_OpenFont(GAME_FONT, SCORE_FONT_SIZE);
+
+    if (st.font == NULL)
+    {
+        printf("Could not initialize font.\n");
+        exit(1);
+    }
+
+    st.color.r = 255;
+    st.color.g = 255;
+    st.color.b = 255;
+    st.color.a = 255;
+
+    SetScreenTextTexture(renderer, &st);
+
+    st.rect.x = ((SCREEN_WIDTH / 2) - (st.rect.w / 2));
+    st.rect.y = SCREEN_HEIGHT / 10;
+
+    st.text_num = 0;
+
+    return st;
+}
+
 void SetScoreScreenText(ScreenText *st, int score, SDL_Renderer *renderer)
 {
     int j = 0;

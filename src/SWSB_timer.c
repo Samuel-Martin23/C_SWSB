@@ -1,6 +1,6 @@
 #include "../include/SWSB_timer.h"
 
-Timer timer = {0, 0, 0, false, false};
+static Timer timer = {0, 0, 0, false, false};
 
 void SetIterationTicks(void)
 {

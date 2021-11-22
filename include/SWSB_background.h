@@ -14,6 +14,7 @@ typedef struct
 } Background;
 
 Background InitBackground(SDL_Renderer *renderer);
+void SetBackground(Background *background);
 void RenderBackground(Background *background, SDL_Renderer *renderer);
 void FreeBackgroundTexture(Background *background);
 
