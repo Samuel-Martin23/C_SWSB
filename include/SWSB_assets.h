@@ -6,7 +6,7 @@
 #include <SDL2/SDL_image.h>
 
 #ifndef ASSETS_PATH
-#define ASSETS_PATH "../assets/
+#define ASSETS_PATH "../assets/"
 #endif
 
 #define GAME_NAME                   "Star Wars: Starship Battles"
@@ -27,7 +27,7 @@
 #define BACKGROUND_IMG              (ASSETS_PATH"star_background.png")
 #define BACKGROUND_VEL              2
 
-#define MF_IDLE_IMG                 (ASSETS_PATH"mf_idle.png")    
+#define MF_IDLE_IMG                 (ASSETS_PATH"mf_idle.png")
 #define MF_FLYING_IMG               (ASSETS_PATH"mf_flying.png")
 
 #define PLAYER_W                    100
