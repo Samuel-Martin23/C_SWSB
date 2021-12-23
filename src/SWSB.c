@@ -1,8 +1,8 @@
 #include "../include/SWSB.h"
 
-int RunGame(Handler *handler, Background *background)
+void RunGame(Handler *handler, Background *background)
 {
-    Entities total_ents = {0, MAX_ENTS, {NULL}};
+    Entities total_ents = {0, {NULL}};
     ScreenText game_score = InitScreenTextScore(handler->wrenderer, "000000000");
     ScreenText restart_msg = InitScreenTextStart(handler->wrenderer, "PRESS SPACE TO RESTART");
 
@@ -14,7 +14,6 @@ int RunGame(Handler *handler, Background *background)
     Uint32 powerup_expired = 0;
     Uint32 current_ticks = 0;
 
-    int game_code = 0;
     int current_score = 0;
     bool is_paused = false;
 
@@ -26,6 +25,8 @@ int RunGame(Handler *handler, Background *background)
     {
         SetIterationTicks();
 
+        UpdateKeyboard(handler);
+
         /*
         ==============
         Quit or pause game.
@@ -35,11 +36,14 @@ int RunGame(Handler *handler, Background *background)
 
         if (handler->event.type == SDL_QUIT)
         {
-            game_code = GAME_QUIT;
+            handler->game_state = GAME_QUIT;
             break;
         }
 
-        CheckGamePaused(handler, &is_paused);
+        if (GetKeyState(handler, SDL_SCANCODE_ESCAPE) & KEY_PRESSED)
+        {
+            is_paused = !(is_paused);
+        }
 
         if (is_paused)
         {
@@ -62,19 +66,22 @@ int RunGame(Handler *handler, Background *background)
 
         player_ship = total_ents.elems[PLAYER_ENT];
 
-        if (handler->keyboard[SDL_SCANCODE_A] && player_ship && player_ship->src_rect.x > 0)
+        if ((GetKeyState(handler, SDL_SCANCODE_A) & (KEY_PRESSED|KEY_HELD_DOWN))
+            && player_ship && player_ship->src_rect.x > 0)
         {
             player_ship->src_rect.x -= player_ship->vel; 
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (handler->keyboard[SDL_SCANCODE_D] && player_ship && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
+        if ((GetKeyState(handler, SDL_SCANCODE_D) & (KEY_PRESSED|KEY_HELD_DOWN))
+            && player_ship && (player_ship->src_rect.x + player_ship->src_rect.w) < SCREEN_WIDTH)
         {
             player_ship->src_rect.x += player_ship->vel;
             player_ship->sprite_type = MF_SPRITE_FLYING;
         }
 
-        if (!(handler->keyboard[SDL_SCANCODE_A]) && !(handler->keyboard[SDL_SCANCODE_D]) && player_ship)
+        if ((GetKeyState(handler, SDL_SCANCODE_A) & KEY_UNPRESSED) 
+            && (GetKeyState(handler, SDL_SCANCODE_D) & KEY_UNPRESSED) && player_ship)
         {
             player_ship->sprite_type = MF_SPRITE_IDLE;
         }
@@ -113,7 +120,7 @@ int RunGame(Handler *handler, Background *background)
         }
 
         // If the user fires, spawn a new bolt.
-        if (handler->keyboard[SDL_SCANCODE_SPACE]
+        if ((GetKeyState(handler, SDL_SCANCODE_SPACE) & (KEY_PRESSED|KEY_HELD_DOWN))
             && player_ship && current_ticks > player_ship->next_bolt)
         {
             AppendEntityBolt(&total_ents, InitBoltEntity(&bolt, ET_PLAYER_BOLT), &player_ship->src_rect);
@@ -189,9 +196,9 @@ int RunGame(Handler *handler, Background *background)
             // Need to render some text.
             RenderScreenText(&restart_msg, handler->wrenderer);
 
-            if (handler->keyboard[SDL_SCANCODE_SPACE])
+            if (GetKeyState(handler, SDL_SCANCODE_SPACE) & KEY_PRESSED)
             {
-                game_code = GAME_RESTART;
+                handler->game_state = GAME_RESTART;
                 break;
             }
         }
@@ -206,8 +213,6 @@ int RunGame(Handler *handler, Background *background)
     FreeScreenText(&restart_msg);
     FreeScreenText(&game_score);
     FreeEntities(&total_ents);
-
-    return game_code;
 }
 
 bool GameDidStart(Handler *handler, Background *background)
@@ -218,6 +223,10 @@ bool GameDidStart(Handler *handler, Background *background)
 
     while (true)
     {
+        SetIterationTicks();
+
+        UpdateKeyboard(handler);
+
         SDL_SetRenderDrawColor(handler->wrenderer, 0, 0, 0, 255);
         SDL_RenderClear(handler->wrenderer);
 
@@ -229,7 +238,7 @@ bool GameDidStart(Handler *handler, Background *background)
             break;
         }
 
-        if (handler->keyboard[SDL_SCANCODE_SPACE])
+        if (GetKeyState(handler, SDL_SCANCODE_SPACE) & KEY_PRESSED)
         {
             break;
         }
@@ -251,7 +260,6 @@ bool GameDidStart(Handler *handler, Background *background)
 
 void RunSWSB(void)
 {
-    int game_code = 0;
     Handler handler = InitHandler(GAME_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     Background background = InitBackground(handler.wrenderer);
 
@@ -259,14 +267,14 @@ void RunSWSB(void)
     {
         while (true)
         {
-            game_code = RunGame(&handler, &background);
+            RunGame(&handler, &background);
 
-            if (game_code == GAME_QUIT)
+            if (handler.game_state == GAME_QUIT)
             {
                 break;
             }
 
-            if (game_code == GAME_RESTART)
+            if (handler.game_state == GAME_RESTART)
             {
                 SetBackground(&background);
             }

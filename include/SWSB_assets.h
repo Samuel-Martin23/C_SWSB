@@ -13,9 +13,6 @@
 #define SCREEN_WIDTH                800
 #define SCREEN_HEIGHT               600
 
-#define GAME_QUIT                   0
-#define GAME_RESTART                1
-
 #define MAX_BUFFER                  512
 
 #define GAME_FONT                   (ASSETS_PATH"pixel_font.ttf")

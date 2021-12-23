@@ -23,26 +23,45 @@ Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags)
         exit(1);
     }
 
-    handler.keyboard = SDL_GetKeyboardState(NULL);
+    handler.game_state = GAME_NONE;
 
     memset(handler.is_key_pressed, 0, SDL_NUM_SCANCODES);
+    memset(handler.key_state, 0, SDL_NUM_SCANCODES);
 
     srand((unsigned int)time(NULL));
 
     return handler;
 }
 
-void CheckGamePaused(Handler *handler, bool *is_paused)
+void UpdateKeyboard(Handler *handler)
 {
-    if (handler->keyboard[SDL_SCANCODE_ESCAPE] && !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]))
+    const Uint8 *keyboard = SDL_GetKeyboardState(NULL);
+
+    for (Uint16 i = 0; i < SDL_NUM_SCANCODES; i++)
     {
-        *is_paused = !(*is_paused);
-        handler->is_key_pressed[SDL_SCANCODE_ESCAPE] = !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]);
+        if (keyboard[i] && !(handler->is_key_pressed[i]))
+        {
+            handler->is_key_pressed[i] = !(handler->is_key_pressed[i]);
+            handler->key_state[i] = KEY_PRESSED;
+            continue;
+        }
+        else if (keyboard[i] && handler->is_key_pressed[i])
+        {
+            handler->key_state[i] = KEY_HELD_DOWN;
+            continue;
+        }
+        else if (!(keyboard[i]) && handler->is_key_pressed[i])
+        {
+            handler->is_key_pressed[i] = !(handler->is_key_pressed[i]);
+        }
+
+        handler->key_state[i] = KEY_UNPRESSED;
     }
-    else if (!(handler->keyboard[SDL_SCANCODE_ESCAPE]) && handler->is_key_pressed[SDL_SCANCODE_ESCAPE])
-    {
-        handler->is_key_pressed[SDL_SCANCODE_ESCAPE] = !(handler->is_key_pressed[SDL_SCANCODE_ESCAPE]);
-    }
+}
+
+Uint8 GetKeyState(Handler *handler, Uint8 key)
+{
+    return handler->key_state[key];
 }
 
 void FreeHandler(Handler *handler)

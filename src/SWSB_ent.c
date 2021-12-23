@@ -594,7 +594,7 @@ static void RemoveEntityFromArray(Entities *ents, int index)
 
 static bool IsEntitiesFull(Entities *ents)
 {
-    if (ents->size == ents->capacity)
+    if (ents->size == MAX_ENTS)
     {
         return true;
     }

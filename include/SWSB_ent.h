@@ -83,7 +83,6 @@ typedef struct Entity
 typedef struct Entities
 {
     int size;
-    int capacity;
     Entity *elems[MAX_ENTS];
 } Entities;
 
