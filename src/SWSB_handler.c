@@ -59,7 +59,7 @@ void UpdateKeyboard(Handler *handler)
     }
 }
 
-Uint8 GetKeyState(Handler *handler, Uint8 key)
+Uint8 GetKeyState(Handler *handler, Uint16 key)
 {
     return handler->key_state[key];
 }

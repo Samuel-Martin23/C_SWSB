@@ -28,7 +28,7 @@ typedef struct
 
 Handler InitHandler(const char *title, int x, int y, int w, int h, Uint32 flags);
 void UpdateKeyboard(Handler *handler);
-Uint8 GetKeyState(Handler *handler, Uint8 key);
+Uint8 GetKeyState(Handler *handler, Uint16 key);
 void FreeHandler(Handler *handler);
 
 #endif /* SWSB_HANDLER_H */
