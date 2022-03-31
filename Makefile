@@ -7,19 +7,20 @@ INCLUDE_DIR := include
 OBJ_DIR := obj
 SRC_DIR := src
 
-PROGRAM_NAME := SWSB
-BUNDLE := $(BUILD_DIR)/$(PROGRAM_NAME).app
-
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SOURCES))
 HEADERS := $(wildcard $(INCLUDE_DIR)/*.h)
 
-assets_path := ../assets/
+ASSETS_PATH := ../assets/
+PROGRAM_NAME := SWSB
+BUNDLE := $(BUILD_DIR)/$(PROGRAM_NAME).app
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(HEADERS)
-	$(CC) $(FLAGS) -c $< -DASSETS_PATH=\"$(assets_path)\" -o $@
+	mkdir -p $(@D)
+	$(CC) $(FLAGS) -c $< -DASSETS_PATH=\"$(ASSETS_PATH)\" -o $@
 
 bin: $(OBJECTS)
+	mkdir -p $@
 	$(CC) $^ -o $(BIN_DIR)/$(PROGRAM_NAME) -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_ttf
 
 release: bin
