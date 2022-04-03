@@ -23,27 +23,18 @@ bin: $(OBJECTS)
 	mkdir -p $@
 	$(CC) $^ -o $(BIN_DIR)/$(PROGRAM_NAME) -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_ttf
 
+debug: FLAGS += -g
+debug: bin
+
+release: ASSETS_PATH := ../Resources/
 release: bin
-	mkdir -p $(BUNDLE)/Contents 
-	mkdir -p $(BUNDLE)/Contents/MacOS 
-	mkdir -p $(BUNDLE)/Contents/Resources 
-	mkdir -p $(BUNDLE)/Contents/Frameworks
+	mkdir -p $(BUNDLE)/Contents/
+	mkdir -p $(BUNDLE)/Contents/MacOS/
+	mkdir -p $(BUNDLE)/Contents/Resources/
 
-	cp -RH /Library/Frameworks/SDL2.framework $(BUNDLE)/Contents/Frameworks/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2.framework/Versions/A/Headers/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2.framework/Headers 
-
-	cp -RH /Library/Frameworks/SDL2_ttf.framework $(BUNDLE)/Contents/Frameworks/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2_ttf.framework/Versions/A/Headers/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2_ttf.framework/Headers 
-
-	cp -RH /Library/Frameworks/SDL2_image.framework $(BUNDLE)/Contents/Frameworks/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2_image.framework/Versions/A/Headers/ 
-	rm -fr $(BUNDLE)/Contents/Frameworks/SDL2_image.framework/Headers
-
-	cp -a assets/. $(BUNDLE)/Contents/Resources
-
-	cp $(BIN_DIR)/$(PROGRAM_NAME) $(BUNDLE)/Contents/MacOS
+	cp -a assets/. $(BUNDLE)/Contents/Resources/
+	cp $(BIN_DIR)/$(PROGRAM_NAME) $(BUNDLE)/Contents/MacOS/
+	mv $(BUNDLE)/Contents/Resources/Info.plist $(BUNDLE)/Contents/
 
 clean:
 	rm $(OBJ_DIR)/*.o

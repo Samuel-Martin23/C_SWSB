@@ -8,3 +8,4 @@
 *.o
 *.dylib
 *.a
+build/
