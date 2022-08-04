@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 
 #define KEY_PRESSED         1
